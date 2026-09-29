@@ -10,6 +10,7 @@
 const int SCREEN_W = 800;
 const int SCREEN_H = 600;
 const float SENSITIVITY = 0.002f;
+const float GRAVITY = 0.981f;
 
 std::string readFile(const char* path) {
     std::ifstream file(path);
@@ -81,10 +82,10 @@ int main() {
 
     float vertices[] = {
         // x,     y,    z,     u,    v,    nx,   ny,   nz
-        -5.0f, 0.0f, -5.0f,  0.0f, 0.0f,
-        5.0f, 0.0f, -5.0f,  1.0f, 0.0f,
-        5.0f, 0.0f,  5.0f,  1.0f, 1.0f, 
-        -5.0f, 0.0f,  5.0f,  0.0f, 1.0f
+        -5.0f, 0.0f, -5.0f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 
+        5.0f, 0.0f, -5.0f,  1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+        5.0f, 0.0f,  5.0f,  1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+        -5.0f, 0.0f,  5.0f,  0.0f, 1.0f, 0.0f, 1.0f, 0.0f
     };
 
     unsigned int indices[] = {
@@ -102,42 +103,19 @@ int main() {
 
     double initTime = glfwGetTime();
 
-    float wallVertices[] = {
-        -0.8f, -0.5f, 0.0f,  0.0f, 0.0f,
-        0.8f, -0.5f, 0.0f,  1.0f, 0.0f,
-        0.8f,  0.5f, 0.0f,  1.0f, 1.0f,
-        -0.8f,  0.5f, 0.0f,  0.0f, 1.0f
-    };
-
-    unsigned int wallIndices[] = {
-        0, 1, 2,
-        2, 3, 0
-    };
-
-    Mesh wall(wallVertices, sizeof(wallVertices), wallIndices, sizeof(wallIndices), 6);
-    
     while (!glfwWindowShouldClose(window)) {
+        camera.print();
         double currentTime = glfwGetTime();
         float deltaTime = static_cast<float>(currentTime - initTime);
         initTime = currentTime;
 /*         std::cout << 1 / deltaTime << "\n"; */
         camera.keyInput(window, deltaTime);
 
-       std::cout
-    << "yaw: " << camera.yaw
-    << " pitch: " << camera.pitch
-    << " pos: "
-    << camera.position.x << ", "
-    << camera.position.y << ", "
-    << camera.position.z
-    << "\n";
-
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.use();
         shader.mat4Set("view", camera.view());
-
         shader.mat4Set(
             "projection",
             camera.perspective(
@@ -147,12 +125,14 @@ int main() {
                 camera.far
             )
         );
-
         shader.mat4Set("model", mat4Identity());
+        shader.vec3Set("objectColor", {1.0, 0.5, 0.31});
+        shader.vec3Set("lightColor", {1.0, 1.0, 1.0});
+        shader.vec3Set("lightPos", {0.0f, 3.0f, 0.0f});
+        shader.vec3Set("viewPos", camera.position);
         
         grid_texture.bind();
         mesh.draw();
-        wall.draw();
 
         glfwPollEvents();
         glfwSwapBuffers(window);

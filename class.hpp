@@ -10,12 +10,32 @@
 
 #include <iostream>
 
+struct Rectangle {
+    Vec3 position;
+    int width;
+    int height;
+};
+
+int AABB(Rectangle a, Rectangle b) {
+    if (a.position.x - (a.width / 2) >= b.position.x - (b.width / 2) &&
+        a.position.x + (a.width / 2) <= b.position.x + (b.width / 2) &&
+        a.position.y - (a.width / 2) >= b.position.y - (b.height) &&
+        a.position.y <= b.position.y &&
+        a.position.z - (a.width / 2) >= b.position.z - (b.width / 2) &&
+        a.position.z + (a.width / 2) <= b.position.z + (b.width / 2)
+    ) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 class Camera {
 public:
     Vec3 position = {0, 0, 0};
     float yaw = 0.0f, pitch = 0.0f, roll = 0.0f, fov = 0.0f, near = 0.0f, far = 0.0f;
 
-    float velocityY = 0.0f;
+    float velocityY;
 
     void keyInput(GLFWwindow* window, float deltaTime) {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -153,13 +173,31 @@ public:
 
         return result;
     }
+
+    Rectangle hitbox() const {
+        return {
+            position,
+            1,
+            2
+        };
+    }
+
+    void gravity(const float gravity, const float deltaTime) {
+        if (deltaTime > 0.1) {
+            velocityY += gravity * 0.1;
+            position.y -= velocityY * 0.1;
+        } else {
+            velocityY += gravity * deltaTime;
+            position.y -= velocityY * deltaTime;
+        };
+    }
 };
 
-struct Vertex {
+/* struct Vertex {
     Vec3 position;
     Vec3 normal;
-    Vec2 uv;
-};
+    Vec2 texcoords;
+}; */
 
 class VertexBuffer {
 public: 
@@ -266,8 +304,9 @@ public:
         glUniformMatrix4fv(location, 1, GL_TRUE, &matrix.matrix[0][0]);
     }
 
-    void vec3Set(const char* name, Vec3 v) const {
-        glUniform3f(glGetUniformLocation(shaderProgram, name), v.x, v.y, v.z);
+    void vec3Set(const char* name, const Vec3 vector) const {
+        unsigned int location = glGetUniformLocation(shaderProgram, name);
+        glUniform3f(location, vector.x, vector.y, vector.z);
     }
 
     ~Shader() {
@@ -320,9 +359,13 @@ public:
         vbo.bind();
         ebo.bind();
 
-        vao.setAttribute(0, 3, 5 * sizeof(float), 0);
-        // UV: u, v
-        vao.setAttribute(1, 2, 5 * sizeof(float), 3 * sizeof(float));
+
+        // x, y, z
+        vao.setAttribute(0, 3, 8 * sizeof(float), 0);
+        // u, v
+        vao.setAttribute(1, 2, 8 * sizeof(float), 3 * sizeof(float));
+        // nx, ny, nz
+        vao.setAttribute(2, 3, 8 * sizeof(float), 5 * sizeof(float));
 
         vao.unbind();
     }
@@ -330,43 +373,5 @@ public:
     void draw() const {
         vao.bind();
         glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
-    }
-};
-
-class Cube {
-public: 
-    Mesh* mesh;
-    Texture* texture;
-
-    Cube(const char* name) {
-        float vertices[] = {
-            0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 1.0f, 
-            0.0f, 1.0f, 0.0f,
-            1.0f, 0.0f, 0.0f,
-            0.0f, 1.0f, 1.0f,
-            1.0f, 0.0f, 1.0f,
-            1.0f, 1.0f, 0.0f,
-            1.0f, 1.0f, 1.0f
-        };
-
-        unsigned int indices[] = {
-            0, 7, 4, 
-            0, 3, 7,
-            2, 3, 0, 
-            2, 1, 3, 
-            6, 1, 2,
-            6, 8, 1,
-            4, 8, 6,
-            4, 7, 8
-        };
-
-        mesh = new Mesh(vertices, sizeof(vertices), indices, sizeof(indices), sizeof(indices) / sizeof(int));
-        texture = new Texture(name);
-    }
-
-    void draw() {
-        texture->bind();
-        mesh->draw();
     }
 };
