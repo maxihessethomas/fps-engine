@@ -11,16 +11,14 @@
 
 #include "glad.h"
 #include "../lib/glfw/include/GLFW/glfw3.h"
-#include "Math/math.hpp"
-#include "Camera/camera.hpp"
-#include "Shader/shader.hpp"
-#include "Texture/texture.hpp"
-#include "Buffer/vertex.hpp"
-#include "Buffer/fragment.hpp"
-#include "Buffer/element.hpp"
-#include "Mesh/mesh.hpp"
-
-
+#include "math.hpp"
+#include "camera.hpp"
+#include "shader.hpp"
+#include "texture.hpp"
+#include "vertex.hpp"
+#include "fragment.hpp"
+#include "element.hpp"
+#include "mesh.hpp"
 
 const int SCREEN_W = 800;
 const int SCREEN_H = 600;
