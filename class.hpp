@@ -322,6 +322,11 @@ public:
         glUniform1f(location, x);
     }
 
+    void intSet(const char* name, const int x) {
+        unsigned int location = glGetUniformLocation(shaderProgram, name);
+        glUniform1i(location, x);
+    }
+
     ~Shader() {
         glDeleteProgram(shaderProgram);
     }

@@ -126,10 +126,10 @@ int main() {
             )
         );
         shader.mat4Set("model", mat4Identity());
-        shader.vec3Set("objectColor", {1.0, 0.5, 0.31});
+        shader.vec3Set("objectColor", {1.0f, 0.5f, 1.0f});
         shader.vec3Set("viewPos", camera.position);
-        shader.vec3Set("material.ambient", {1.0f, 0.5f, 0.31f});
-        shader.vec3Set("material.diffuse", {1.0f, 0.5f, 0.31f});
+        shader.vec3Set("material.ambient", {1.0f, 0.5f, 1.0f});
+        shader.vec3Set("material.diffuse", {1.0f, 0.5f, 1.0f});
         shader.vec3Set("material.specular", {0.5f, 0.5f, 0.5f});
         shader.floatSet("material.shininess", 32.0f);
         shader.vec3Set("light.position", {5.0f, 5.0f, 0.0f});
