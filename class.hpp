@@ -10,6 +10,14 @@
 
 #include <iostream>
 
+struct Light {
+    Vec3 position;
+
+    Vec3 ambient;
+    Vec3 diffuse;
+    Vec3 specular;
+};
+
 struct Rectangle {
     Vec3 position;
     int width;
@@ -307,6 +315,11 @@ public:
     void vec3Set(const char* name, const Vec3 vector) const {
         unsigned int location = glGetUniformLocation(shaderProgram, name);
         glUniform3f(location, vector.x, vector.y, vector.z);
+    }
+
+    void floatSet(const char* name, const float x) {
+        unsigned int location = glGetUniformLocation(shaderProgram, name);
+        glUniform1f(location, x);
     }
 
     ~Shader() {
