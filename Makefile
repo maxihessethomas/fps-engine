@@ -15,11 +15,11 @@ all: $(TARGET)
 $(TARGET): main.o glad.o
 	$(CXX) main.o glad.o -o $(TARGET) $(LDFLAGS)
 
-main.o: main.cpp
-	$(CXX) $(CXXFLAGS) -c main.cpp -o main.o
+main.o: src/main.cpp
+	$(CXX) $(CXXFLAGS) -c src/main.cpp -o main.o
 
-glad.o: glad.c
-	$(CC) $(CFLAGS) -c glad.c -o glad.o
+glad.o: src/glad.c
+	$(CC) $(CFLAGS) -c src/glad.c -o glad.o
 
 clean:
 	rm -f main.o glad.o $(TARGET)

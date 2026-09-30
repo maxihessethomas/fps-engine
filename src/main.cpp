@@ -1,6 +1,6 @@
-#include "glad.h"
-#include "lib/glfw/include/GLFW/glfw3.h"
+#include "camera.hpp"
 #include "class.hpp"
+#include "texture.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -14,9 +14,6 @@ const float GRAVITY = 0.981f;
 
 std::string readFile(const char* path) {
     std::ifstream file(path);
-    if (!file.is_open()) {
-        std::cout << "Failed to load file";
-    }
     std::stringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
@@ -93,8 +90,8 @@ int main() {
         2, 3, 0
     };
 
-    std::string vertexShaderSource = readFile("basic.vert");
-    std::string fragmentShaderSource = readFile("basic.frag");
+    std::string vertexShaderSource = readFile("src/basic.vert");
+    std::string fragmentShaderSource = readFile("src/basic.frag");
     Shader shader(vertexShaderSource.c_str(), fragmentShaderSource.c_str());
 
     Mesh mesh(vertices, sizeof(vertices), indices, sizeof(indices), (sizeof(indices) / sizeof(int)));
