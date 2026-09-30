@@ -1,8 +1,4 @@
-#include "math.hpp"
-#include "lib.h"
-#include "class.hpp"
-
-#include <iostream>
+#pragma once
 
 class Camera {
 public:
@@ -130,6 +126,21 @@ public:
         return mat4Mul(rotation, translation);
     }
 
+    Mat4 skyboxView() const {
+        Vec3 forward = getForward();
+        Vec3 right = getRight();
+        Vec3 up = getUp();
+
+        Mat4 rotation = {
+            right.x, right.y, right.z, 0,
+            up.x, up.y, up.z, 0,
+            -forward.x, -forward.y, -forward.z, 0,
+            0, 0, 0, 1
+        };
+
+        return rotation;
+    }
+
     Mat4 perspective(float fov, float aspect, float near, float far) const {
         Mat4 result = {0};
 
@@ -144,14 +155,6 @@ public:
         result.matrix[2][3] = (2.0f * far * near) / (near - far);
 
         return result;
-    }
-
-    Rectangle hitbox() const {
-        return {
-            position,
-            1,
-            2
-        };
     }
 
     void gravity(const float gravity, const float deltaTime) {

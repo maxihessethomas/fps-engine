@@ -24,17 +24,17 @@ public:
 float aspect(int width, int height) {
     return (float)width/ (float)height;
 }
-inline float degreesToRadians(float angle) {
+float degreesToRadians(float angle) {
     return angle * (M_PI / 180);
 }
-inline float vec3Length(Vec3 vector) {
+float vec3Length(Vec3 vector) {
     return (float){
         sqrt((vector.x * vector.x) + (vector.y * vector.y) + (vector.z * vector.z))
     };
 }
 
 // VEC3 //
-inline Vec3 vec3Normalize(Vec3 vector) {
+Vec3 vec3Normalize(Vec3 vector) {
     float length = vec3Length(vector);
     if (length == 0) {
         return (Vec3){0};

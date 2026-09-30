@@ -4,7 +4,7 @@ CC = gcc
 GLFW_INC = lib/glfw/include
 GLFW_LIB = lib/glfw/build/src
 
-CXXFLAGS = -std=c++17 -Wall -I$(GLFW_INC) -I.
+CXXFLAGS = -std=c++17 -Wall -I$(GLFW_INC) -Isrc -I.
 CFLAGS = -Wall -I.
 LDFLAGS = -L$(GLFW_LIB) -lglfw3 -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo -framework QuartzCore
 

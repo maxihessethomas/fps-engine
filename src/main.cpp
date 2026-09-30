@@ -1,11 +1,26 @@
-#include "camera.hpp"
-#include "class.hpp"
-#include "texture.hpp"
-
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <cmath>
+
+#define STB_IMAGE_IMPLEMENTATION
+
+#include "../lib/stb/stb_image.h"
+
+
+#include "glad.h"
+#include "../lib/glfw/include/GLFW/glfw3.h"
+#include "Math/math.hpp"
+#include "Camera/camera.hpp"
+#include "Shader/shader.hpp"
+#include "Texture/texture.hpp"
+#include "Buffer/vertex.hpp"
+#include "Buffer/fragment.hpp"
+#include "Buffer/element.hpp"
+#include "Mesh/mesh.hpp"
+
+
 
 const int SCREEN_W = 800;
 const int SCREEN_H = 600;
@@ -71,12 +86,6 @@ int main() {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
 
-
-/*     std::cout << "vec1: " << vec1.x << " " << vec1.y << " " << vec1.z << "\n";
-    std::cout << "vec2: " << vec2.x << " " << vec2.y << " " << vec2.z << "\n";
-    std::cout << "vec3: " << vec3.x << " " << vec3.y << " " << vec3.z << "\n"; */
-
-
     float vertices[] = {
         // x,     y,    z,     u,    v,    nx,   ny,   nz
         -5.0f, 0.0f, -5.0f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 
@@ -98,10 +107,79 @@ int main() {
 
     Texture grid_texture("textures/grid.png");
 
+    const char* skybox[] = {
+        "textures/skybox/right.jpg",
+        "textures/skybox/left.jpg",
+        "textures/skybox/top.jpg",
+        "textures/skybox/bottom.jpg",
+        "textures/skybox/front.jpg",
+        "textures/skybox/back.jpg"
+    };
+
+    float skyboxVertices[] = {
+        // positions          
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f
+    };
+
+    std::string skyboxVertexShader = readFile("src/skybox.vert");
+    std::string skyboxFragmentShader = readFile("src/skybox.frag");
+    Shader skyboxShader(skyboxVertexShader.c_str(), skyboxFragmentShader.c_str());
+
+    VertexArray skyboxVAO;
+    VertexBuffer skyboxVBO(skyboxVertices, sizeof(skyboxVertices));
+
+    skyboxVAO.bind();
+    skyboxVBO.bind();
+
+    skyboxVAO.setAttribute(0, 3, 3 * sizeof(float), 0);
+
+    skyboxVAO.unbind();
+
+    CubeMap cubemap(skybox);
+
     double initTime = glfwGetTime();
 
     while (!glfwWindowShouldClose(window)) {
-        camera.print();
         double currentTime = glfwGetTime();
         float deltaTime = static_cast<float>(currentTime - initTime);
         initTime = currentTime;
@@ -111,17 +189,25 @@ int main() {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glDepthFunc(GL_LEQUAL);
+
+        skyboxShader.use();
+        skyboxShader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
+        skyboxShader.mat4Set("view", camera.skyboxView());
+
+        glActiveTexture(GL_TEXTURE0);
+        cubemap.bind();
+        skyboxShader.intSet("skybox", 0);
+
+        skyboxVAO.bind();
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        skyboxVAO.unbind();
+
+        glDepthFunc(GL_LESS);
+
         shader.use();
         shader.mat4Set("view", camera.view());
-        shader.mat4Set(
-            "projection",
-            camera.perspective(
-                camera.fov,
-                aspect(SCREEN_W, SCREEN_H),
-                camera.near,
-                camera.far
-            )
-        );
+        shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
         shader.mat4Set("model", mat4Identity());
         shader.vec3Set("objectColor", {1.0f, 0.5f, 1.0f});
         shader.vec3Set("viewPos", camera.position);
@@ -136,6 +222,7 @@ int main() {
         
         grid_texture.bind();
         mesh.draw();
+
 
         glfwPollEvents();
         glfwSwapBuffers(window);
