@@ -13,14 +13,12 @@ struct Material {
 
 struct Light {
     vec3 position;
-  
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
 };
 
 uniform sampler2D texture1;
-uniform vec3 objectColor;
 uniform vec3 viewPos;
 uniform Material material;
 uniform Light light;

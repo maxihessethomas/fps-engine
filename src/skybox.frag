@@ -9,16 +9,3 @@ void main()
 {    
     FragColor = texture(skybox, TexCoords);
 }
-
-/* 
-
-#version 330 core
-
-out vec4 FragColor;
-
-in vec3 TexCoords;
-
-void main()
-{
-    FragColor = vec4(TexCoords * 0.5 + 0.5, 1.0);
-} */

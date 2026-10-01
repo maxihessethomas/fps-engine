@@ -3,22 +3,24 @@
 #include <sstream>
 #include <string>
 #include <cmath>
+#include <stdio.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "../lib/stb/stb_image.h"
 
-
 #include "glad.h"
-#include "../lib/glfw/include/GLFW/glfw3.h"
+#include "GLFW/glfw3.h"
+
+#include "mesh.hpp"
 #include "math.hpp"
 #include "camera.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
-#include "vertex.hpp"
-#include "fragment.hpp"
-#include "element.hpp"
-#include "mesh.hpp"
+#include "buffer.hpp"
+#include "class.hpp"
+
+#include "collision.hpp"
 
 const int SCREEN_W = 800;
 const int SCREEN_H = 600;
@@ -80,9 +82,70 @@ int main() {
         100.0f
     };
 
+    Rectangle hitbox = {camera.position, 1, 2};
+
     glfwSetWindowUserPointer(window, &camera);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
+
+// Vertex layout: position (3), UV (2), normal (3)
+float cubeVertices[] = {
+    // Front face (+Z)
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  0.0f, 0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f, 0.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,  0.0f, 0.0f, 1.0f,
+
+    // Back face (-Z)
+    -0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f, 0.0f, -1.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, -1.0f,
+     0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  0.0f, 0.0f, -1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  0.0f, 0.0f, -1.0f,
+
+    // Left face (-X)
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, -1.0f, 0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, -1.0f, 0.0f, 0.0f,
+
+    // Right face (+X)
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  1.0f, 0.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  1.0f, 0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f, 1.0f,  1.0f, 0.0f, 0.0f,
+
+    // Top face (+Y)
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,  0.0f, 1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  0.0f, 1.0f, 0.0f,
+
+    // Bottom face (-Y)
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  0.0f, -1.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f, -1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 1.0f,  0.0f, -1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 1.0f,  0.0f, -1.0f, 0.0f
+};
+
+unsigned int cubeIndices[] = {
+    // Front
+     0,  1,  2,   2,  3,  0,
+
+    // Back
+     4,  5,  6,   6,  7,  4,
+
+    // Left
+     8,  9, 10,  10, 11,  8,
+
+    // Right
+    12, 13, 14,  14, 15, 12,
+
+    // Top
+    16, 17, 18,  18, 19, 16,
+
+    // Bottom
+    20, 21, 22,  22, 23, 20
+};
 
     float vertices[] = {
         // x,     y,    z,     u,    v,    nx,   ny,   nz
@@ -97,11 +160,14 @@ int main() {
         2, 3, 0
     };
 
+    Rectangle collisionBox = {{0.0f, 0.0f, 0.0f}, 10, 1};
+
     std::string vertexShaderSource = readFile("src/basic.vert");
     std::string fragmentShaderSource = readFile("src/basic.frag");
     Shader shader(vertexShaderSource.c_str(), fragmentShaderSource.c_str());
 
     Mesh mesh(vertices, sizeof(vertices), indices, sizeof(indices), (sizeof(indices) / sizeof(int)));
+    Mesh cubeMesh(cubeVertices, sizeof(cubeVertices), cubeIndices, sizeof(cubeIndices), 36);
 
     Texture grid_texture("textures/grid.png");
 
@@ -175,14 +241,28 @@ int main() {
 
     CubeMap cubemap(skybox);
 
+    Light light = {
+        {0, 10, 0},
+        {0.1f, 0.1f, 0.1f},
+        {0.8f, 0.8f, 0.8f},
+        {1.0f, 1.0f, 1.0f}
+    };
+
     double initTime = glfwGetTime();
 
     while (!glfwWindowShouldClose(window)) {
+  /*       printf("%f, %f, %f \n", hitbox.position.x, hitbox.position.y, hitbox.position.z); */
+
+        int collision = AABB(collisionBox, hitbox);
+        if (collision == 1) {
+            std::cout << "collision\n";
+        }
         double currentTime = glfwGetTime();
         float deltaTime = static_cast<float>(currentTime - initTime);
         initTime = currentTime;
-/*         std::cout << 1 / deltaTime << "\n"; */
+
         camera.keyInput(window, deltaTime);
+        hitbox.position = camera.position;
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -207,20 +287,19 @@ int main() {
         shader.mat4Set("view", camera.view());
         shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
         shader.mat4Set("model", mat4Identity());
-        shader.vec3Set("objectColor", {1.0f, 0.5f, 1.0f});
         shader.vec3Set("viewPos", camera.position);
-        shader.vec3Set("material.ambient", {1.0f, 0.5f, 1.0f});
-        shader.vec3Set("material.diffuse", {1.0f, 0.5f, 1.0f});
+        shader.vec3Set("material.ambient", {0.0f, 0.0f, 0.0f});
+        shader.vec3Set("material.diffuse", {1.0f, 1.0f, 1.0f});
         shader.vec3Set("material.specular", {0.5f, 0.5f, 0.5f});
         shader.floatSet("material.shininess", 32.0f);
-        shader.vec3Set("light.position", {5.0f, 5.0f, 0.0f});
-        shader.vec3Set("light.ambient",  {0.2f, 0.2f, 0.2f});
-        shader.vec3Set("light.diffuse",  {0.5f, 0.5f, 0.5f}); // darken diffuse light a bit
-        shader.vec3Set("light.specular", {1.0f, 1.0f, 1.0f}); 
+        shader.vec3Set("light.position", light.position);
+        shader.vec3Set("light.ambient",  light.ambient);
+        shader.vec3Set("light.diffuse",  light.diffuse);
+        shader.vec3Set("light.specular", light.specular);
         
         grid_texture.bind();
         mesh.draw();
-
+        cubeMesh.draw();
 
         glfwPollEvents();
         glfwSwapBuffers(window);
@@ -230,3 +309,9 @@ int main() {
     glfwTerminate();
     return 0;
 }
+
+struct Vertex {
+    Vec3 position;
+    Vec3 normal;
+    Vec3 texcoords;
+};

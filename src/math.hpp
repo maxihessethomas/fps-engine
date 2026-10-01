@@ -45,14 +45,14 @@ Vec3 vec3Normalize(Vec3 vector) {
         .z = vector.z / length
     };
 }
-inline Vec3 vec3Cross(Vec3 a, Vec3 b) {
+Vec3 vec3Cross(Vec3 a, Vec3 b) {
     return (Vec3) {
         a.y * b.z - a.z * b.y,
         a.z * b.x - a.x * b.z,
         a.x * b.y - a.y * b.x
     };
 }
-inline Vec3 vec4ToNdc(Vec4 vector) {
+Vec3 vec4ToNdc(Vec4 vector) {
     return (Vec3){
         .x = vector.x / vector.w,
         .y = vector.y / vector.w,
@@ -61,7 +61,7 @@ inline Vec3 vec4ToNdc(Vec4 vector) {
 }
 
 // VEC4 //
-inline Vec4 mat4MulVec4(Mat4 matrix, Vec4 vector) {
+Vec4 mat4MulVec4(Mat4 matrix, Vec4 vector) {
     return (Vec4){
         .x = 
             matrix.matrix[0][0] * vector.x +
@@ -87,7 +87,7 @@ inline Vec4 mat4MulVec4(Mat4 matrix, Vec4 vector) {
 }
 
 // MAT4 //
-inline Mat4 mat4Identity() {
+Mat4 mat4Identity() {
     return (Mat4){
         .matrix[0][0] = 1.0f,
         .matrix[1][1] = 1.0f,
@@ -95,7 +95,7 @@ inline Mat4 mat4Identity() {
         .matrix[3][3] = 1.0f
     };
 }
-inline Mat4 mat4Mul(Mat4 a, Mat4 b) {
+Mat4 mat4Mul(Mat4 a, Mat4 b) {
     Mat4 result = {0};
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
