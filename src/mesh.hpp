@@ -2,6 +2,15 @@
 
 #include "buffer.hpp"
 
+#include <iostream>
+#include <vector>
+
+/* struct Vertex {
+    Vec3 position;
+    Vec3 normal;
+    Vec3 texcoords;
+}; */
+
 class Mesh {
 public:
     VertexArray vao;
@@ -31,3 +40,25 @@ public:
         glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
     }
 };
+
+/* class Mesh {
+public: 
+    std::vector<Vertex>       vertices;
+    std::vector<unsigned int> indices;
+    std::vector<Texture>      textures;
+
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures) {
+        this->vertices = vertices;
+        this->indices = indices;
+        this->textures = textures;
+    }
+
+private:
+    VertexArray VAO;
+    VertexBuffer VBO;
+    ElementBuffer EBO;
+
+    VAO.bind();
+    VBO.bind();
+    
+}; */

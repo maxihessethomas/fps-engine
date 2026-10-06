@@ -1,0 +1,33 @@
+[
+  {
+    "file": "src/main.cpp",
+    "arguments": [
+      "/usr/bin/g++",
+      "-std=c++17",
+      "-Wall",
+      "-Ilib/glfw/include",
+      "-Isrc",
+      "-I.",
+      "-c",
+      "src/main.cpp",
+      "-o",
+      "main.o"
+    ],
+    "directory": "/Users/maxih/code/fps",
+    "output": "main.o"
+  },
+  {
+    "file": "src/glad.c",
+    "arguments": [
+      "/usr/bin/gcc",
+      "-Wall",
+      "-I.",
+      "-c",
+      "src/glad.c",
+      "-o",
+      "glad.o"
+    ],
+    "directory": "/Users/maxih/code/fps",
+    "output": "glad.o"
+  }
+]

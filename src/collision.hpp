@@ -2,13 +2,13 @@
 
 #include "math.hpp"
 
-struct Rectangle {
+struct Hitbox {
     Vec3 position;
     float width;
     float height;
 };
 
-int AABB(Rectangle a, Rectangle b) {
+int AABB(Hitbox a, Hitbox b) {
     
     if (a.position.x - (a.width / 2) >= b.position.x - (b.width / 2) &&
         a.position.x + (a.width / 2) <= b.position.x + (b.width / 2) &&

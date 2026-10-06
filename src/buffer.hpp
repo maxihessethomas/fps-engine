@@ -4,7 +4,7 @@
 #include "glad.h"
 
 class VertexBuffer {
-public: 
+public:
     unsigned int id;
 
     VertexBuffer(const float* data, size_t size) {

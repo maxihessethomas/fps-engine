@@ -1,8 +1,6 @@
-#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <cmath>
 #include <stdio.h>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -11,6 +9,8 @@
 
 #include "glad.h"
 #include "GLFW/glfw3.h"
+
+#include "window.hpp"
 
 #include "mesh.hpp"
 #include "math.hpp"
@@ -22,8 +22,8 @@
 
 #include "collision.hpp"
 
-const int SCREEN_W = 800;
-const int SCREEN_H = 600;
+const int SCREEN_W = 1800;
+const int SCREEN_H = 1000;
 const float SENSITIVITY = 0.002f;
 const float GRAVITY = 0.981f;
 
@@ -34,10 +34,9 @@ std::string readFile(const char* path) {
     return buffer.str();
 }
 
-GLFWwindow* GLFWInit(int width, int height, const char* name) {
-    if(!glfwInit()) {
-        std::cout << "INFO: GLFW failed\n";
-        return NULL;
+int main() {
+    if (!glfwInit() ){
+        printf("INFO: GLFW FAILED");
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -48,30 +47,22 @@ GLFWwindow* GLFWInit(int width, int height, const char* name) {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(width, height, name, NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCREEN_W, SCREEN_H, "fps", NULL, NULL);
     if (!window) {
-        std::cout << "INFO: window creation failed\n";
+        printf("INFO: window creation failed");
         glfwTerminate();
-        return NULL;
+        return -1;
     }
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
-
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cout << "INFO: GLAD failed\n";
+        printf("INFO: GLAD failed");
         glfwTerminate();
-        return NULL;
     }
 
     glEnable(GL_DEPTH_TEST);
-
-    return window;
-}
-
-int main() {
-    GLFWwindow* window = GLFWInit(SCREEN_W, SCREEN_H, "fps");
-    if (!window) return -1;
-    
+/*     GLFWwindow* debug = glfwCreateWindow(SCREEN_W, SCREEN_H, "debug", NULL, NULL);
+ */
     Camera camera = {
         {0, 2, 3},
         0.0f,
@@ -81,8 +72,6 @@ int main() {
         0.1f,
         100.0f
     };
-
-    Rectangle hitbox = {camera.position, 1, 2};
 
     glfwSetWindowUserPointer(window, &camera);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -149,19 +138,16 @@ unsigned int cubeIndices[] = {
 
     float vertices[] = {
         // x,     y,    z,     u,    v,    nx,   ny,   nz
-        -5.0f, 0.0f, -5.0f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 
+        -5.0f, 0.0f, -5.0f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
         5.0f, 0.0f, -5.0f,  1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
         5.0f, 0.0f,  5.0f,  1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
         -5.0f, 0.0f,  5.0f,  0.0f, 1.0f, 0.0f, 1.0f, 0.0f
     };
 
     unsigned int indices[] = {
-        0, 1, 2, 
+        0, 1, 2,
         2, 3, 0
     };
-
-    Rectangle collisionBox = {{0.0f, 0.0f, 0.0f}, 10, 1};
-
     std::string vertexShaderSource = readFile("src/basic.vert");
     std::string fragmentShaderSource = readFile("src/basic.frag");
     Shader shader(vertexShaderSource.c_str(), fragmentShaderSource.c_str());
@@ -181,7 +167,7 @@ unsigned int cubeIndices[] = {
     };
 
     float skyboxVertices[] = {
-        // positions          
+        // positions
         -1.0f,  1.0f, -1.0f,
         -1.0f, -1.0f, -1.0f,
         1.0f, -1.0f, -1.0f,
@@ -253,16 +239,11 @@ unsigned int cubeIndices[] = {
     while (!glfwWindowShouldClose(window)) {
   /*       printf("%f, %f, %f \n", hitbox.position.x, hitbox.position.y, hitbox.position.z); */
 
-        int collision = AABB(collisionBox, hitbox);
-        if (collision == 1) {
-            std::cout << "collision\n";
-        }
         double currentTime = glfwGetTime();
         float deltaTime = static_cast<float>(currentTime - initTime);
         initTime = currentTime;
 
         camera.keyInput(window, deltaTime);
-        hitbox.position = camera.position;
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -296,22 +277,27 @@ unsigned int cubeIndices[] = {
         shader.vec3Set("light.ambient",  light.ambient);
         shader.vec3Set("light.diffuse",  light.diffuse);
         shader.vec3Set("light.specular", light.specular);
-        
+
         grid_texture.bind();
         mesh.draw();
         cubeMesh.draw();
 
-        glfwPollEvents();
         glfwSwapBuffers(window);
+        glfwPollEvents();
     }
 
+/*     while (!glfwWindowShouldClose(debug)) {
+        glfwMakeContextCurrent(debug);
+        glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glfwSwapBuffers(debug);
+        glfwPollEvents();
+    } */
+
     glfwDestroyWindow(window);
+/*     glfwDestroyWindow(debug); */
     glfwTerminate();
     return 0;
 }
 
-struct Vertex {
-    Vec3 position;
-    Vec3 normal;
-    Vec3 texcoords;
-};
