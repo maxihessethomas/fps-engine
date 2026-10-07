@@ -19,18 +19,21 @@ public:
     int indexCount;
 
     Mesh(const float* vertexData, size_t vertexSize, const unsigned int* indexData, size_t indexSize, int indexCount)
-        : vbo(vertexData, vertexSize), ebo(indexData, indexSize), indexCount(indexCount) {
+        : indexCount(indexCount) {
+        
         vao.bind();
         vbo.bind();
+        vbo.setData(vertexData, vertexSize);
         ebo.bind();
+        ebo.setData(indexData, indexSize);
 
 
         // x, y, z
-        vao.setAttribute(0, 3, 8 * sizeof(float), 0);
+        vao.setAttribute(0, 3, 8 * sizeof(float), 0, GL_FLOAT);
         // u, v
-        vao.setAttribute(1, 2, 8 * sizeof(float), 3 * sizeof(float));
+        vao.setAttribute(1, 2, 8 * sizeof(float), 3 * sizeof(float), GL_FLOAT);
         // nx, ny, nz
-        vao.setAttribute(2, 3, 8 * sizeof(float), 5 * sizeof(float));
+        vao.setAttribute(2, 3, 8 * sizeof(float), 5 * sizeof(float), GL_FLOAT);
 
         vao.unbind();
     }

@@ -10,8 +10,7 @@
 #include "glad.h"
 #include "GLFW/glfw3.h"
 
-#include "window.hpp"
-
+#include "cube.hpp"
 #include "mesh.hpp"
 #include "math.hpp"
 #include "camera.hpp"
@@ -25,7 +24,7 @@
 const int SCREEN_W = 1800;
 const int SCREEN_H = 1000;
 const float SENSITIVITY = 0.002f;
-const float GRAVITY = 0.981f;
+const float GRAVITY = 9.81f;
 
 std::string readFile(const char* path) {
     std::ifstream file(path);
@@ -77,65 +76,6 @@ int main() {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
 
-// Vertex layout: position (3), UV (2), normal (3)
-float cubeVertices[] = {
-    // Front face (+Z)
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  0.0f, 0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 0.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,  0.0f, 0.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,  0.0f, 0.0f, 1.0f,
-
-    // Back face (-Z)
-    -0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f, 0.0f, -1.0f,
-    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 0.0f, -1.0f,
-     0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  0.0f, 0.0f, -1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  0.0f, 0.0f, -1.0f,
-
-    // Left face (-X)
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, -1.0f, 0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, -1.0f, 0.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, -1.0f, 0.0f, 0.0f,
-
-    // Right face (+X)
-     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  1.0f, 0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  1.0f, 0.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  1.0f, 0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  0.0f, 1.0f,  1.0f, 0.0f, 0.0f,
-
-    // Top face (+Y)
-    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,  0.0f, 1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,  0.0f, 1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  0.0f, 1.0f, 0.0f,
-
-    // Bottom face (-Y)
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  0.0f, -1.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f, -1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 1.0f,  0.0f, -1.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 1.0f,  0.0f, -1.0f, 0.0f
-};
-
-unsigned int cubeIndices[] = {
-    // Front
-     0,  1,  2,   2,  3,  0,
-
-    // Back
-     4,  5,  6,   6,  7,  4,
-
-    // Left
-     8,  9, 10,  10, 11,  8,
-
-    // Right
-    12, 13, 14,  14, 15, 12,
-
-    // Top
-    16, 17, 18,  18, 19, 16,
-
-    // Bottom
-    20, 21, 22,  22, 23, 20
-};
-
     float vertices[] = {
         // x,     y,    z,     u,    v,    nx,   ny,   nz
         -5.0f, 0.0f, -5.0f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
@@ -148,13 +88,12 @@ unsigned int cubeIndices[] = {
         0, 1, 2,
         2, 3, 0
     };
+
     std::string vertexShaderSource = readFile("src/basic.vert");
     std::string fragmentShaderSource = readFile("src/basic.frag");
     Shader shader(vertexShaderSource.c_str(), fragmentShaderSource.c_str());
 
     Mesh mesh(vertices, sizeof(vertices), indices, sizeof(indices), (sizeof(indices) / sizeof(int)));
-    Mesh cubeMesh(cubeVertices, sizeof(cubeVertices), cubeIndices, sizeof(cubeIndices), 36);
-
     Texture grid_texture("textures/grid.png");
 
     const char* skybox[] = {
@@ -216,12 +155,13 @@ unsigned int cubeIndices[] = {
     Shader skyboxShader(skyboxVertexShader.c_str(), skyboxFragmentShader.c_str());
 
     VertexArray skyboxVAO;
-    VertexBuffer skyboxVBO(skyboxVertices, sizeof(skyboxVertices));
+    VertexBuffer skyboxVBO;
+    skyboxVBO.setData(skyboxVertices, sizeof(skyboxVertices));
 
     skyboxVAO.bind();
     skyboxVBO.bind();
 
-    skyboxVAO.setAttribute(0, 3, 3 * sizeof(float), 0);
+    skyboxVAO.setAttribute(0, 3, 3 * sizeof(float), 0, GL_FLOAT);
 
     skyboxVAO.unbind();
 
@@ -236,12 +176,14 @@ unsigned int cubeIndices[] = {
 
     double initTime = glfwGetTime();
 
-    while (!glfwWindowShouldClose(window)) {
-  /*       printf("%f, %f, %f \n", hitbox.position.x, hitbox.position.y, hitbox.position.z); */
+    Cube cube;
 
+    while (!glfwWindowShouldClose(window)) {
         double currentTime = glfwGetTime();
         float deltaTime = static_cast<float>(currentTime - initTime);
         initTime = currentTime;
+        cube.velocityY += GRAVITY * deltaTime;
+        cube.position.y -= cube.velocityY * deltaTime;
 
         camera.keyInput(window, deltaTime);
 
@@ -280,7 +222,7 @@ unsigned int cubeIndices[] = {
 
         grid_texture.bind();
         mesh.draw();
-        cubeMesh.draw();
+        cube.draw();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
