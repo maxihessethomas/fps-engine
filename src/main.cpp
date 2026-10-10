@@ -1,5 +1,3 @@
-#include <fstream>
-#include <sstream>
 #include <string>
 #include <stdio.h>
 
@@ -10,7 +8,7 @@
 #include "glad.h"
 #include "GLFW/glfw3.h"
 
-#include "cube.hpp"
+#include "import.hpp"
 #include "mesh.hpp"
 #include "math.hpp"
 #include "camera.hpp"
@@ -25,13 +23,7 @@ const int SCREEN_W = 1800;
 const int SCREEN_H = 1000;
 const float SENSITIVITY = 0.002f;
 const float GRAVITY = 9.81f;
-
-std::string readFile(const char* path) {
-    std::ifstream file(path);
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
+bool WIREFRAME = false;
 
 int main() {
     if (!glfwInit() ){
@@ -60,8 +52,7 @@ int main() {
     }
 
     glEnable(GL_DEPTH_TEST);
-/*     GLFWwindow* debug = glfwCreateWindow(SCREEN_W, SCREEN_H, "debug", NULL, NULL);
- */
+
     Camera camera = {
         {0, 2, 3},
         0.0f,
@@ -76,25 +67,8 @@ int main() {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
 
-    float vertices[] = {
-        // x,     y,    z,     u,    v,    nx,   ny,   nz
-        -5.0f, 0.0f, -5.0f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        5.0f, 0.0f, -5.0f,  1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        5.0f, 0.0f,  5.0f,  1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-        -5.0f, 0.0f,  5.0f,  0.0f, 1.0f, 0.0f, 1.0f, 0.0f
-    };
-
-    unsigned int indices[] = {
-        0, 1, 2,
-        2, 3, 0
-    };
-
-    std::string vertexShaderSource = readFile("src/basic.vert");
-    std::string fragmentShaderSource = readFile("src/basic.frag");
-    Shader shader(vertexShaderSource.c_str(), fragmentShaderSource.c_str());
-
-    Mesh mesh(vertices, sizeof(vertices), indices, sizeof(indices), (sizeof(indices) / sizeof(int)));
-    Texture grid_texture("textures/grid.png");
+/*     Mesh mesh(vertices, sizeof(vertices), indices, sizeof(indices), (sizeof(indices) / sizeof(int)));
+    Texture grid_texture("textures/grid.png"); */
 
     const char* skybox[] = {
         "textures/skybox/right.jpg",
@@ -150,13 +124,13 @@ int main() {
         1.0f, -1.0f,  1.0f
     };
 
-    std::string skyboxVertexShader = readFile("src/skybox.vert");
-    std::string skyboxFragmentShader = readFile("src/skybox.frag");
-    Shader skyboxShader(skyboxVertexShader.c_str(), skyboxFragmentShader.c_str());
+/*     std::string skyboxVertexShader = readShader("src/skybox.vert");
+    std::string skyboxFragmentShader = readShader("src/skybox.frag");
+    Shader skyboxShader(skyboxVertexShader.c_str(), skyboxFragmentShader.c_str()); */
 
-    VertexArray skyboxVAO;
-    VertexBuffer skyboxVBO;
-    skyboxVBO.setData(skyboxVertices, sizeof(skyboxVertices));
+/*     VAO skyboxVAO;
+    VBO skyboxVBO;
+    skyboxVBO.init(skyboxVertices, sizeof(skyboxVertices));
 
     skyboxVAO.bind();
     skyboxVBO.bind();
@@ -166,7 +140,7 @@ int main() {
     skyboxVAO.unbind();
 
     CubeMap cubemap(skybox);
-
+ */
     Light light = {
         {0, 10, 0},
         {0.1f, 0.1f, 0.1f},
@@ -176,23 +150,27 @@ int main() {
 
     double initTime = glfwGetTime();
 
-    Cube cube;
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+
+    readOBJ("assets/level1.obj", vertices, indices);
 
     while (!glfwWindowShouldClose(window)) {
         double currentTime = glfwGetTime();
         float deltaTime = static_cast<float>(currentTime - initTime);
         initTime = currentTime;
-        cube.velocityY += GRAVITY * deltaTime;
-        cube.position.y -= cube.velocityY * deltaTime;
 
         camera.keyInput(window, deltaTime);
+        if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+            WIREFRAME = !WIREFRAME;
+        }
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glDepthFunc(GL_LEQUAL);
 
-        skyboxShader.use();
+/*         skyboxShader.use();
         skyboxShader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
         skyboxShader.mat4Set("view", camera.skyboxView());
 
@@ -202,11 +180,11 @@ int main() {
 
         skyboxVAO.bind();
         glDrawArrays(GL_TRIANGLES, 0, 36);
-        skyboxVAO.unbind();
+        skyboxVAO.unbind(); */
 
         glDepthFunc(GL_LESS);
 
-        shader.use();
+/*         shader.use();
         shader.mat4Set("view", camera.view());
         shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
         shader.mat4Set("model", mat4Identity());
@@ -221,24 +199,20 @@ int main() {
         shader.vec3Set("light.specular", light.specular);
 
         grid_texture.bind();
-        mesh.draw();
-        cube.draw();
+        mesh.draw(); */
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-/*     while (!glfwWindowShouldClose(debug)) {
-        glfwMakeContextCurrent(debug);
-        glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+    GLFWwindow* debug = glfwCreateWindow(600, 600, "debug", NULL, NULL);
+    if (!debug) {
+        glfwTerminate();
+        return -1;
+    }
 
-        glfwSwapBuffers(debug);
-        glfwPollEvents();
-    } */
-
+    glfwDestroyWindow(debug);
     glfwDestroyWindow(window);
-/*     glfwDestroyWindow(debug); */
     glfwTerminate();
     return 0;
 }

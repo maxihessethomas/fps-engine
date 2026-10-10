@@ -12,7 +12,7 @@ TARGET = fps
 
 all: $(TARGET)
 
-$(TARGET): main.o glad.o
+$(TARGET): main.o glad.o 
 	$(CXX) main.o glad.o -o $(TARGET) $(LDFLAGS)
 
 main.o: src/main.cpp

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 class Shader {
 public: 
     unsigned int vertexShader, fragmentShader, shaderProgram;
@@ -30,8 +32,10 @@ public:
             std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
         } 
     }
-    
-    Shader(const char* vertexShaderSource, const char* fragmentShaderSource) {
+
+    Shader() {}
+
+    void init(const char* vertexShaderSource, const char* fragmentShaderSource) {
         createShader(vertexShader, vertexShaderSource, GL_VERTEX_SHADER);
         createShader(fragmentShader, fragmentShaderSource, GL_FRAGMENT_SHADER);
         unsigned int shaders[2] = {vertexShader, fragmentShader};
