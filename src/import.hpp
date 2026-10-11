@@ -4,6 +4,8 @@
 #include <sstream>
 #include <vector>
 #include <iostream>
+#include <string>
+#include <algorithm>
 
 #include "vertex.h"
 #include "import.hpp"
@@ -17,17 +19,54 @@ std::string readShader(const char* path) {
 }
 
 void readOBJ(const char* path, 
-    std::vector<Vertex>& vertices, 
+    std::vector<Vertex>& vertices,
     std::vector<unsigned int>& indices) {
 
-    std::ifstream file("data.txt");
+    std::ifstream file(path);
     std::string line;
-    std::stringstream stream;
+
+    vertices.clear();
+    indices.clear();
+
+    std::vector<Vec3> positions;
+    std::vector<Vec2> texcoords;
+    std::vector<Vec3> normals;
 
     while(std::getline(file, line)) {
         std::stringstream stream(line);
         std::string type;
         stream >> type;
-        std::cout << type;
+        
+        Vertex vertex;
+        Vec3 position, normal;
+        Vec2 texcoord;
+        unsigned int index;
+
+        if (type == "v") {
+            stream >> position.x >> position.y >> position.z;
+            positions.push_back(position);
+        } else if (type == "vt") {
+            stream >> texcoord.x >> texcoord.y;
+            texcoords.push_back(texcoord);
+        } else if (type == "vn") {
+            stream >> normal.x >> normal.y >> normal.z;
+            normals.push_back(normal);
+        } else if (type == "f") {
+            std::string token;
+
+            while (stream >> token) {
+                std::replace(token.begin(), token.end(), '/', ' ');
+                std::stringstream stream(token);
+
+                int vertexIndex, textureIndex, normalIndex;
+
+                vertex.position = positions[vertexIndex - 1];
+                vertex.texcoord = texcoords[textureIndex - 1];
+                vertex.normal = normals[normalIndex - 1];
+
+                vertices.push_back(vertex);
+                indices.push_back(static_cast<int>(vertices.size() - 1));
+            }
+        }
     }
 }

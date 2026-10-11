@@ -2,6 +2,7 @@
 
 #include "GLFW/glfw3.h"
 #include "glad.h"
+#include "vertex.h"
 
 #include <vector>
 
@@ -13,17 +14,19 @@ public:
         glGenBuffers(1, &id);
     }
 
-    void init(const std::vector<float> data, size_t size) {        
-        glBindBuffer(GL_ARRAY_BUFFER, id);
-        glBufferData(GL_ARRAY_BUFFER, size, data.data(), GL_STATIC_DRAW);  
-    }
-    void init(const float* data, size_t size) {
-        glBindBuffer(GL_ARRAY_BUFFER, id);
-        glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
-    }
-
     void bind() const { glBindBuffer(GL_ARRAY_BUFFER, id); }
     void unbind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
+
+    void init(const std::vector<Vertex> data, size_t size) { 
+        bind();       
+        glBufferData(GL_ARRAY_BUFFER, size, data.data(), GL_STATIC_DRAW);  
+        unbind();
+    }
+    void init(const float* data, size_t size) {
+        bind();
+        glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+        unbind();
+    }
 
     ~VBO() {
         glDeleteBuffers(1, &id);
@@ -45,6 +48,7 @@ public:
         bind();
         glVertexAttribPointer(index, quant, type, GL_FALSE, size, (void*)offset);
         glEnableVertexAttribArray(index);
+        unbind();
     }
 
     ~VAO() {
@@ -60,17 +64,19 @@ public:
         glGenBuffers(1, &id);
     }
 
-    void init(const unsigned int* data, size_t size) {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
-    }
-    void init(std::vector<unsigned int> data, size_t size) {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data.data(), GL_STATIC_DRAW);
-    }
-
     void bind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id); }
     void unbind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
+
+    void init(const unsigned int* data, size_t size) {
+        bind();
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+        unbind();
+    }
+    void init(const std::vector<unsigned int> data, size_t size) {
+        bind();
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data.data(), GL_STATIC_DRAW);
+        unbind();
+    }
 
     ~EBO() {
         glDeleteBuffers(1, &id);

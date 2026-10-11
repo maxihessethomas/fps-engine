@@ -5,9 +5,15 @@ public:
     unsigned int id;
     int width, height, nrChannels;
 
-    Texture(const char* filename) {
+    Texture() {
         glGenTextures(1, &id);
-        glBindTexture(GL_TEXTURE_2D, id);
+    }
+    
+    void bind() const { glBindTexture(GL_TEXTURE_2D, id); }
+    void unbind() const { glBindTexture(GL_TEXTURE_2D, 0); }
+
+    void init(const char* path) {
+        bind();
         
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -15,7 +21,7 @@ public:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        unsigned char* data = stbi_load(filename, &width, &height, &nrChannels, 0);
+        unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
 
         if (data) {
             GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
@@ -25,10 +31,7 @@ public:
         } else {
             std::cout << "failed";
         }
-    }
-
-    void bind() const {
-        glBindTexture(GL_TEXTURE_2D, id);
+        unbind();
     }
 };
 

@@ -15,7 +15,7 @@
 #include "shader.hpp"
 #include "texture.hpp"
 #include "buffer.hpp"
-#include "class.hpp"
+#include "light.hpp"
 
 #include "collision.hpp"
 
@@ -68,7 +68,7 @@ int main() {
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
 
 /*     Mesh mesh(vertices, sizeof(vertices), indices, sizeof(indices), (sizeof(indices) / sizeof(int)));
-    Texture grid_texture("textures/grid.png"); */
+        Texture grid_texture("textures/grid.png");
 
     const char* skybox[] = {
         "textures/skybox/right.jpg",
@@ -122,13 +122,13 @@ int main() {
         1.0f, -1.0f, -1.0f,
         -1.0f, -1.0f,  1.0f,
         1.0f, -1.0f,  1.0f
-    };
+    }; */
 
 /*     std::string skyboxVertexShader = readShader("src/skybox.vert");
     std::string skyboxFragmentShader = readShader("src/skybox.frag");
-    Shader skyboxShader(skyboxVertexShader.c_str(), skyboxFragmentShader.c_str()); */
+    Shader skyboxShader(skyboxVertexShader.c_str(), skyboxFragmentShader.c_str());
 
-/*     VAO skyboxVAO;
+    VAO skyboxVAO;
     VBO skyboxVBO;
     skyboxVBO.init(skyboxVertices, sizeof(skyboxVertices));
 
@@ -150,10 +150,7 @@ int main() {
 
     double initTime = glfwGetTime();
 
-    std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
-
-    readOBJ("assets/level1.obj", vertices, indices);
+    Mesh mesh("src/basic.vert", "src/basic.frag", "assets/level1.obj", "textures/grid.png");
 
     while (!glfwWindowShouldClose(window)) {
         double currentTime = glfwGetTime();
@@ -168,7 +165,7 @@ int main() {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glDepthFunc(GL_LEQUAL);
+        /* glDepthFunc(GL_LEQUAL);
 
 /*         skyboxShader.use();
         skyboxShader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
@@ -180,7 +177,7 @@ int main() {
 
         skyboxVAO.bind();
         glDrawArrays(GL_TRIANGLES, 0, 36);
-        skyboxVAO.unbind(); */
+        skyboxVAO.unbind();
 
         glDepthFunc(GL_LESS);
 
@@ -201,17 +198,19 @@ int main() {
         grid_texture.bind();
         mesh.draw(); */
 
+        mesh.draw(camera, light, SCREEN_W, SCREEN_H);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    GLFWwindow* debug = glfwCreateWindow(600, 600, "debug", NULL, NULL);
+/*     GLFWwindow* debug = glfwCreateWindow(600, 600, "debug", NULL, NULL);
     if (!debug) {
         glfwTerminate();
         return -1;
     }
 
-    glfwDestroyWindow(debug);
+    glfwDestroyWindow(debug);*/
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;

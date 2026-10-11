@@ -56,12 +56,12 @@ public:
         glUniform3f(location, vector.x, vector.y, vector.z);
     }
 
-    void floatSet(const char* name, const float x) {
+    void floatSet(const char* name, const float x) const {
         unsigned int location = glGetUniformLocation(shaderProgram, name);
         glUniform1f(location, x);
     }
 
-    void intSet(const char* name, const int x) {
+    void intSet(const char* name, const int x) const {
         unsigned int location = glGetUniformLocation(shaderProgram, name);
         glUniform1i(location, x);
     }

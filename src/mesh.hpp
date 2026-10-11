@@ -5,6 +5,9 @@
 #include "import.hpp"
 #include "shader.hpp"
 #include "vertex.h"
+#include "texture.hpp"
+#include "camera.hpp"
+#include "light.hpp"
 
 #include <optional>
 #include <vector>
@@ -19,32 +22,49 @@ public:
     std::vector<unsigned int> indices;
     std::string vertexShaderSource, fragmentShaderSource;
     Shader shader;
+    Texture texture;
 
-    Mesh(const char* vertexShaderPath, const char* fragmentShaderPath) {
+    Mesh(const char* vertexShaderPath, 
+        const char* fragmentShaderPath, 
+        const char* objFilePath,
+        const char* textureFilePath
+    ) {
         vertexShaderSource = readShader(vertexShaderPath);
         fragmentShaderSource = readShader(fragmentShaderPath);
         shader.init(vertexShaderSource.c_str(), fragmentShaderSource.c_str());
 
-        VAO.bind();
-        VBO.bind();
-/*         vbo.init();
-        ebo.bind();
-        ebo.init(); */
+        readOBJ(objFilePath, vertices, indices);
+        texture.init(textureFilePath);
 
+        VAO.setAttribute(0, 3, sizeof(Vertex), 0, GL_FLOAT);
+        VAO.setAttribute(1, 2, sizeof(Vertex), sizeof(Vec3), GL_FLOAT);
+        VAO.setAttribute(2, 3, sizeof(Vertex), sizeof(Vec3) + sizeof(Vec2), GL_FLOAT);
 
-        // x, y, z
-        VAO.setAttribute(0, 3, 8 * sizeof(float), 0, GL_FLOAT);
-        // u, v
-        VAO.setAttribute(1, 2, 8 * sizeof(float), 3 * sizeof(float), GL_FLOAT);
-        // nx, ny, nz
-        VAO.setAttribute(2, 3, 8 * sizeof(float), 5 * sizeof(float), GL_FLOAT);
-
-        VAO.unbind();
-
+        VBO.init(vertices, sizeof(vertices));
+        EBO.init(indices, sizeof(indices));
     }
 
-    void draw() const {
+    void draw(Camera camera, Light light, int SCREEN_W, int SCREEN_H) const {
+        texture.bind();
         VAO.bind();
+
+        shader.use();
+        shader.mat4Set("view", camera.view());
+        shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
+        shader.mat4Set("model", mat4Identity());
+        shader.vec3Set("viewPos", camera.position);
+        shader.vec3Set("material.ambient", {0.0f, 0.0f, 0.0f});
+        shader.vec3Set("material.diffuse", {1.0f, 1.0f, 1.0f});
+        shader.vec3Set("material.specular", {0.5f, 0.5f, 0.5f});
+        shader.floatSet("material.shininess", 32.0f);
+        shader.vec3Set("light.position", light.position);
+        shader.vec3Set("light.ambient",  light.ambient);
+        shader.vec3Set("light.diffuse",  light.diffuse);
+        shader.vec3Set("light.specular", light.specular);   
+
         glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+
+        VAO.unbind();
+        texture.unbind();
     }
 };
