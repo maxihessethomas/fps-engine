@@ -17,15 +17,11 @@ public:
     void bind() const { glBindBuffer(GL_ARRAY_BUFFER, id); }
     void unbind() const { glBindBuffer(GL_ARRAY_BUFFER, 0); }
 
-    void init(const std::vector<Vertex> data, size_t size) { 
-        bind();       
+    void init(const std::vector<Vertex> data, size_t size) {       
         glBufferData(GL_ARRAY_BUFFER, size, data.data(), GL_STATIC_DRAW);  
-        unbind();
     }
     void init(const float* data, size_t size) {
-        bind();
         glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
-        unbind();
     }
 
     ~VBO() {
@@ -45,10 +41,8 @@ public:
     void unbind() const { glBindVertexArray(0); }
 
     void setAttribute(unsigned int index, int quant, size_t size, size_t offset, GLenum type) {
-        bind();
         glVertexAttribPointer(index, quant, type, GL_FALSE, size, (void*)offset);
         glEnableVertexAttribArray(index);
-        unbind();
     }
 
     ~VAO() {
@@ -68,14 +62,10 @@ public:
     void unbind() const { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
 
     void init(const unsigned int* data, size_t size) {
-        bind();
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
-        unbind();
     }
     void init(const std::vector<unsigned int> data, size_t size) {
-        bind();
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data.data(), GL_STATIC_DRAW);
-        unbind();
     }
 
     ~EBO() {

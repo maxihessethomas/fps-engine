@@ -69,4 +69,6 @@ void readOBJ(const char* path,
             }
         }
     }
+    std::cout << vertices.size() << std::endl;
+    std::cout << indices.size() << std::endl;
 }

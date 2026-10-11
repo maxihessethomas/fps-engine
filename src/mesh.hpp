@@ -36,12 +36,22 @@ public:
         readOBJ(objFilePath, vertices, indices);
         texture.init(textureFilePath);
 
+        indexCount = sizeof(indices) / sizeof(int);
+
+        VAO.bind();
+        
+        VBO.bind();
+        VBO.init(vertices, vertices.size());
+
+        EBO.bind();
+        EBO.init(indices, indices.size());
+
         VAO.setAttribute(0, 3, sizeof(Vertex), 0, GL_FLOAT);
         VAO.setAttribute(1, 2, sizeof(Vertex), sizeof(Vec3), GL_FLOAT);
         VAO.setAttribute(2, 3, sizeof(Vertex), sizeof(Vec3) + sizeof(Vec2), GL_FLOAT);
 
-        VBO.init(vertices, sizeof(vertices));
-        EBO.init(indices, sizeof(indices));
+        VBO.unbind();
+        EBO.unbind();
     }
 
     void draw(Camera camera, Light light, int SCREEN_W, int SCREEN_H) const {
