@@ -60,6 +60,8 @@ void readOBJ(const char* path,
 
                 int vertexIndex, textureIndex, normalIndex;
 
+                stream >> vertexIndex >> textureIndex >> normalIndex;
+                
                 vertex.position = positions[vertexIndex - 1];
                 vertex.texcoord = texcoords[textureIndex - 1];
                 vertex.normal = normals[normalIndex - 1];

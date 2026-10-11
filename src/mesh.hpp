@@ -36,7 +36,7 @@ public:
         readOBJ(objFilePath, vertices, indices);
         texture.init(textureFilePath);
 
-        indexCount = sizeof(indices) / sizeof(int);
+        indexCount = indices.size();
 
         VAO.bind();
         
@@ -50,6 +50,7 @@ public:
         VAO.setAttribute(1, 2, sizeof(Vertex), sizeof(Vec3), GL_FLOAT);
         VAO.setAttribute(2, 3, sizeof(Vertex), sizeof(Vec3) + sizeof(Vec2), GL_FLOAT);
 
+        VAO.unbind();
         VBO.unbind();
         EBO.unbind();
     }
