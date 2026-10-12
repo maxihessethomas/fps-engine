@@ -40,7 +40,6 @@ void readOBJ(const char* path,
         Vertex vertex;
         Vec3 position, normal;
         Vec2 texcoord;
-        unsigned int index;
 
         if (type == "v") {
             stream >> position.x >> position.y >> position.z;
@@ -61,7 +60,7 @@ void readOBJ(const char* path,
                 int vertexIndex, textureIndex, normalIndex;
 
                 stream >> vertexIndex >> textureIndex >> normalIndex;
-                
+
                 vertex.position = positions[vertexIndex - 1];
                 vertex.texcoord = texcoords[textureIndex - 1];
                 vertex.normal = normals[normalIndex - 1];

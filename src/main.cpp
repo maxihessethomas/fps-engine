@@ -7,6 +7,9 @@
 
 #include "glad.h"
 #include "GLFW/glfw3.h"
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
 
 #include "import.hpp"
 #include "mesh.hpp"
@@ -67,9 +70,7 @@ int main() {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
 
-/*     Mesh mesh(vertices, sizeof(vertices), indices, sizeof(indices), (sizeof(indices) / sizeof(int)));
-        Texture grid_texture("textures/grid.png");
-
+/*  
     const char* skybox[] = {
         "textures/skybox/right.jpg",
         "textures/skybox/left.jpg",
@@ -122,9 +123,9 @@ int main() {
         1.0f, -1.0f, -1.0f,
         -1.0f, -1.0f,  1.0f,
         1.0f, -1.0f,  1.0f
-    }; */
+    };
 
-/*     std::string skyboxVertexShader = readShader("src/skybox.vert");
+    std::string skyboxVertexShader = readShader("src/skybox.vert");
     std::string skyboxFragmentShader = readShader("src/skybox.frag");
     Shader skyboxShader(skyboxVertexShader.c_str(), skyboxFragmentShader.c_str());
 
@@ -150,7 +151,8 @@ int main() {
 
     double initTime = glfwGetTime();
 
-    Mesh mesh("src/basic.vert", "src/basic.frag", "assets/level1.obj", "textures/grid.png");
+    Mesh level("src/basic.vert", "src/basic.frag", "assets/level1.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
+    Mesh pistol("src/basic.vert", "src/basic.frag", "assets/pistol.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
 
     while (!glfwWindowShouldClose(window)) {
         double currentTime = glfwGetTime();
@@ -198,7 +200,8 @@ int main() {
         grid_texture.bind();
         mesh.draw(); */
 
-        mesh.draw(camera, light, SCREEN_W, SCREEN_H);
+        level.draw(camera, light, SCREEN_W, SCREEN_H);
+        pistol.draw(camera, light, SCREEN_W, SCREEN_H);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

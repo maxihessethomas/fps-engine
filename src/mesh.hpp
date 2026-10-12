@@ -27,7 +27,11 @@ public:
     Mesh(const char* vertexShaderPath, 
         const char* fragmentShaderPath, 
         const char* objFilePath,
-        const char* textureFilePath
+        const char* textureFilePath,
+        Light light,
+        Camera camera,
+        int SCREEN_W,
+        int SCREEN_H
     ) {
         vertexShaderSource = readShader(vertexShaderPath);
         fragmentShaderSource = readShader(fragmentShaderPath);
@@ -41,10 +45,11 @@ public:
         VAO.bind();
         
         VBO.bind();
-        VBO.init(vertices, vertices.size());
+        VBO.init(vertices, vertices.size() * sizeof(float));
+        std::cout << vertices.size();
 
         EBO.bind();
-        EBO.init(indices, indices.size());
+        EBO.init(indices, indices.size() * sizeof(float));
 
         VAO.setAttribute(0, 3, sizeof(Vertex), 0, GL_FLOAT);
         VAO.setAttribute(1, 2, sizeof(Vertex), sizeof(Vec3), GL_FLOAT);
@@ -61,8 +66,6 @@ public:
 
         shader.use();
         shader.mat4Set("view", camera.view());
-        shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
-        shader.mat4Set("model", mat4Identity());
         shader.vec3Set("viewPos", camera.position);
         shader.vec3Set("material.ambient", {0.0f, 0.0f, 0.0f});
         shader.vec3Set("material.diffuse", {1.0f, 1.0f, 1.0f});
@@ -71,7 +74,10 @@ public:
         shader.vec3Set("light.position", light.position);
         shader.vec3Set("light.ambient",  light.ambient);
         shader.vec3Set("light.diffuse",  light.diffuse);
-        shader.vec3Set("light.specular", light.specular);   
+        shader.vec3Set("light.specular", light.specular);
+
+        shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
+        shader.mat4Set("model", mat4Identity()); 
 
         glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 
