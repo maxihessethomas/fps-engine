@@ -44,10 +44,10 @@ public:
         VAO.bind();
         
         VBO.bind();
-        VBO.init(vertices, vertices.size() * sizeof(float));
+        VBO.init(vertices, vertices.size() * sizeof(Vertex));
 
         EBO.bind();
-        EBO.init(indices, indices.size() * sizeof(float));
+        EBO.init(indices, indices.size() * sizeof(unsigned int));
 
         VAO.setAttribute(0, 3, sizeof(Vertex), 0, GL_FLOAT);
         VAO.setAttribute(1, 2, sizeof(Vertex), sizeof(Vec3), GL_FLOAT);
@@ -58,24 +58,41 @@ public:
         EBO.unbind();
     }
 
-    void draw(Camera camera, Light light, int SCREEN_W, int SCREEN_H) const {
+    void draw(Camera camera, Light light, int SCREEN_W, int SCREEN_H, VIEW_POSITION viewposition) const {
         texture.bind();
         VAO.bind();
 
-        shader.use();
-        shader.mat4Set("view", camera.view(ROTATION_AND_TRANSLATION));
-        shader.vec3Set("viewPos", camera.position);
-        shader.vec3Set("material.ambient", {0.0f, 0.0f, 0.0f});
-        shader.vec3Set("material.diffuse", {1.0f, 1.0f, 1.0f});
-        shader.vec3Set("material.specular", {0.5f, 0.5f, 0.5f});
-        shader.floatSet("material.shininess", 32.0f);
-        shader.vec3Set("light.position", light.position);
-        shader.vec3Set("light.ambient",  light.ambient);
-        shader.vec3Set("light.diffuse",  light.diffuse);
-        shader.vec3Set("light.specular", light.specular);
+        if (viewposition == SCENE) {
+            shader.use();
+            shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
+            shader.mat4Set("model", mat4Identity()); 
+            shader.mat4Set("view", camera.view(ROTATION_AND_TRANSLATION, viewposition));
+            shader.vec3Set("viewPos", camera.position);
+            shader.vec3Set("material.ambient", {0.0f, 0.0f, 0.0f});
+            shader.vec3Set("material.diffuse", {1.0f, 1.0f, 1.0f});
+            shader.vec3Set("material.specular", {0.5f, 0.5f, 0.5f});
+            shader.floatSet("material.shininess", 32.0f);
+            shader.vec3Set("light.position", light.position);
+            shader.vec3Set("light.ambient",  light.ambient);
+            shader.vec3Set("light.diffuse",  light.diffuse);
+            shader.vec3Set("light.specular", light.specular);
+        }
 
-        shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
-        shader.mat4Set("model", mat4Identity()); 
+        if (viewposition == CAMERA) {
+            shader.use();
+            shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
+            shader.mat4Set("model", mat4Translate({0.25f, -0.10f, -0.5f})); 
+            shader.mat4Set("view", mat4Identity());
+            shader.vec3Set("viewPos", camera.position);
+            shader.vec3Set("material.ambient", {0.0f, 0.0f, 0.0f});
+            shader.vec3Set("material.diffuse", {1.0f, 1.0f, 1.0f});
+            shader.vec3Set("material.specular", {0.5f, 0.5f, 0.5f});
+            shader.floatSet("material.shininess", 32.0f);
+            shader.vec3Set("light.position", light.position);
+            shader.vec3Set("light.ambient",  light.ambient);
+            shader.vec3Set("light.diffuse",  light.diffuse);
+            shader.vec3Set("light.specular", light.specular);
+        }
 
         glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 

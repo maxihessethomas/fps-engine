@@ -49,7 +49,7 @@ int main() {
         return -1;
     }
     glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         printf("INFO: GLAD failed");
         glfwTerminate();
@@ -70,6 +70,12 @@ int main() {
     glfwSetWindowUserPointer(window, &camera);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
   
     const char* skyboxPath[] = {
         "textures/skybox/right.jpg",
@@ -91,8 +97,8 @@ int main() {
 
     double initTime = glfwGetTime();
 
-    Mesh level("src/basic.vert", "src/basic.frag", "assets/level1.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
     Mesh pistol("src/basic.vert", "src/basic.frag", "assets/pistol.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
+    Mesh level("src/basic.vert", "src/basic.frag", "assets/level.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
 
     while (!glfwWindowShouldClose(window)) {
         double currentTime = glfwGetTime();
@@ -108,8 +114,19 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         skybox.draw(camera, SCREEN_W, SCREEN_H);
-        level.draw(camera, light, SCREEN_W, SCREEN_H);
-        pistol.draw(camera, light, SCREEN_W, SCREEN_H);
+        pistol.draw(camera, light, SCREEN_W, SCREEN_H, CAMERA);
+        level.draw(camera, light, SCREEN_W, SCREEN_H, SCENE);
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::Begin("Stats");
+        ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -122,6 +139,9 @@ int main() {
     }
 
     glfwDestroyWindow(debug);*/
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
     glfwDestroyWindow(window);
     glfwTerminate();
     return 0;

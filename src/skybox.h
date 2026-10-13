@@ -99,7 +99,7 @@ public:
 
         shader.use();
         shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
-        shader.mat4Set("view", camera.view(ROTATION));
+        shader.mat4Set("view", camera.view(ROTATION, SCENE));
 
         glActiveTexture(GL_TEXTURE0);
         glDrawArrays(GL_TRIANGLES, 0, 36);

@@ -6,18 +6,8 @@ struct Vec2 { float x, y; };
 struct Vec4 { float x, y, z, w; };
 struct Mat4 { float matrix[4][4]; };
 
-class Vec3 {
-public:
+struct Vec3 {
     float x, y, z;
-
-    Mat4 mat4Translate(Vec3 translation) const {
-        return {
-            1, 0, 0, x,
-            0, 1, 0, y,
-            0, 0, 1, z,
-            0, 0, 0, 1
-        };
-    }
 };
 
 // MISC //
@@ -95,6 +85,15 @@ Mat4 mat4Identity() {
         .matrix[3][3] = 1.0f
     };
 }
+Mat4 mat4Translate(Vec3 vector) {
+    return {
+        1, 0, 0, vector.x,
+        0, 1, 0, vector.y,
+        0, 0, 1, vector.z,
+        0, 0, 0, 1
+    };
+}
+
 Mat4 mat4Mul(Mat4 a, Mat4 b) {
     Mat4 result = {0};
     for (int i = 0; i < 4; i++) {

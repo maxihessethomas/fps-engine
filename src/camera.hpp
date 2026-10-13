@@ -6,6 +6,11 @@ enum VIEW_TYPE {
     ROTATION_AND_TRANSLATION
 };
 
+enum VIEW_POSITION {
+    CAMERA,
+    SCENE
+};
+
 class Camera {
 public:
     Vec3 position = {0, 0, 0};
@@ -110,21 +115,30 @@ public:
         return vec3Normalize(vec3Cross(getRight(), getForward()));
     }
 
-    Mat4 view(VIEW_TYPE type) const {
+    Mat4 view(VIEW_TYPE viewtype, VIEW_POSITION viewposition) const {
         Vec3 forward = getForward();
         Vec3 right = getRight();
         Vec3 up = getUp();
 
-        if (type == ROTATION) {
-            return {
-                right.x, right.y, right.z, 0,
-                up.x, up.y, up.z, 0,
-                -forward.x, -forward.y, -forward.z, 0,
-                0, 0, 0, 1
-            };
+        if (viewtype == ROTATION) {
+            if (viewposition == CAMERA) {
+                return {
+                    right.x, right.y, right.z, 0,
+                    up.x, up.y, up.z, 0,
+                    forward.x, forward.y, forward.z, 0,
+                    0, 0, 0, 1
+                };
+            } else {
+                return {
+                    right.x, right.y, right.z, 0,
+                    up.x, up.y, up.z, 0,
+                    -forward.x, -forward.y, -forward.z, 0,
+                    0, 0, 0, 1
+                }; 
+            }
         }
 
-        if (type == TRANSLATION) {
+        if (viewtype == TRANSLATION) {
             return {
                 1, 0, 0, -position.x,
                 0, 1, 0, -position.y,
@@ -133,7 +147,7 @@ public:
             };
         }
 
-        if (type == ROTATION_AND_TRANSLATION) {
+        if (viewtype == ROTATION_AND_TRANSLATION) {
             Mat4 rotation = {
                 right.x, right.y, right.z, 0,
                 up.x, up.y, up.z, 0,
