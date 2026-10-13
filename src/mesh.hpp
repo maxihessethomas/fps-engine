@@ -9,7 +9,6 @@
 #include "camera.hpp"
 #include "light.hpp"
 
-#include <optional>
 #include <vector>
 
 class Mesh {
@@ -46,7 +45,6 @@ public:
         
         VBO.bind();
         VBO.init(vertices, vertices.size() * sizeof(float));
-        std::cout << vertices.size();
 
         EBO.bind();
         EBO.init(indices, indices.size() * sizeof(float));
@@ -65,7 +63,7 @@ public:
         VAO.bind();
 
         shader.use();
-        shader.mat4Set("view", camera.view());
+        shader.mat4Set("view", camera.view(ROTATION_AND_TRANSLATION));
         shader.vec3Set("viewPos", camera.position);
         shader.vec3Set("material.ambient", {0.0f, 0.0f, 0.0f});
         shader.vec3Set("material.diffuse", {1.0f, 1.0f, 1.0f});

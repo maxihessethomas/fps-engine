@@ -20,8 +20,8 @@ public:
     void init(const std::vector<Vertex> data, size_t size) {       
         glBufferData(GL_ARRAY_BUFFER, size, data.data(), GL_STATIC_DRAW);  
     }
-    void init(const float* data, size_t size) {
-        glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+    void init(const std::vector<float> data, size_t size) {
+        glBufferData(GL_ARRAY_BUFFER, size, data.data(), GL_STATIC_DRAW);
     }
 
     ~VBO() {

@@ -19,6 +19,7 @@
 #include "texture.hpp"
 #include "buffer.hpp"
 #include "light.hpp"
+#include "skybox.h"
 
 #include "collision.hpp"
 
@@ -69,9 +70,8 @@ int main() {
     glfwSetWindowUserPointer(window, &camera);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, Camera::mouseCallback);
-
-/*  
-    const char* skybox[] = {
+  
+    const char* skyboxPath[] = {
         "textures/skybox/right.jpg",
         "textures/skybox/left.jpg",
         "textures/skybox/top.jpg",
@@ -80,68 +80,8 @@ int main() {
         "textures/skybox/back.jpg"
     };
 
-    float skyboxVertices[] = {
-        // positions
-        -1.0f,  1.0f, -1.0f,
-        -1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
+    Skybox skybox("src/skybox.vert", "src/skybox.frag", skyboxPath);
 
-        -1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f, -1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-
-        -1.0f, -1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f, -1.0f,  1.0f,
-        -1.0f, -1.0f,  1.0f,
-
-        -1.0f,  1.0f, -1.0f,
-        1.0f,  1.0f, -1.0f,
-        1.0f,  1.0f,  1.0f,
-        1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f,  1.0f,
-        -1.0f,  1.0f, -1.0f,
-
-        -1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-        1.0f, -1.0f, -1.0f,
-        1.0f, -1.0f, -1.0f,
-        -1.0f, -1.0f,  1.0f,
-        1.0f, -1.0f,  1.0f
-    };
-
-    std::string skyboxVertexShader = readShader("src/skybox.vert");
-    std::string skyboxFragmentShader = readShader("src/skybox.frag");
-    Shader skyboxShader(skyboxVertexShader.c_str(), skyboxFragmentShader.c_str());
-
-    VAO skyboxVAO;
-    VBO skyboxVBO;
-    skyboxVBO.init(skyboxVertices, sizeof(skyboxVertices));
-
-    skyboxVAO.bind();
-    skyboxVBO.bind();
-
-    skyboxVAO.setAttribute(0, 3, 3 * sizeof(float), 0, GL_FLOAT);
-
-    skyboxVAO.unbind();
-
-    CubeMap cubemap(skybox);
- */
     Light light = {
         {0, 10, 0},
         {0.1f, 0.1f, 0.1f},
@@ -167,39 +107,7 @@ int main() {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        /* glDepthFunc(GL_LEQUAL);
-
-/*         skyboxShader.use();
-        skyboxShader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
-        skyboxShader.mat4Set("view", camera.skyboxView());
-
-        glActiveTexture(GL_TEXTURE0);
-        cubemap.bind();
-        skyboxShader.intSet("skybox", 0);
-
-        skyboxVAO.bind();
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        skyboxVAO.unbind();
-
-        glDepthFunc(GL_LESS);
-
-/*         shader.use();
-        shader.mat4Set("view", camera.view());
-        shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
-        shader.mat4Set("model", mat4Identity());
-        shader.vec3Set("viewPos", camera.position);
-        shader.vec3Set("material.ambient", {0.0f, 0.0f, 0.0f});
-        shader.vec3Set("material.diffuse", {1.0f, 1.0f, 1.0f});
-        shader.vec3Set("material.specular", {0.5f, 0.5f, 0.5f});
-        shader.floatSet("material.shininess", 32.0f);
-        shader.vec3Set("light.position", light.position);
-        shader.vec3Set("light.ambient",  light.ambient);
-        shader.vec3Set("light.diffuse",  light.diffuse);
-        shader.vec3Set("light.specular", light.specular);
-
-        grid_texture.bind();
-        mesh.draw(); */
-
+        skybox.draw(camera, SCREEN_W, SCREEN_H);
         level.draw(camera, light, SCREEN_W, SCREEN_H);
         pistol.draw(camera, light, SCREEN_W, SCREEN_H);
 

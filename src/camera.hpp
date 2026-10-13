@@ -1,5 +1,11 @@
 #pragma once
 
+enum VIEW_TYPE {
+    ROTATION,
+    TRANSLATION,
+    ROTATION_AND_TRANSLATION
+};
+
 class Camera {
 public:
     Vec3 position = {0, 0, 0};
@@ -104,41 +110,46 @@ public:
         return vec3Normalize(vec3Cross(getRight(), getForward()));
     }
 
-    Mat4 view() const {
+    Mat4 view(VIEW_TYPE type) const {
         Vec3 forward = getForward();
         Vec3 right = getRight();
         Vec3 up = getUp();
 
-        Mat4 rotation = {
-            right.x, right.y, right.z, 0,
-            up.x, up.y, up.z, 0,
-            -forward.x, -forward.y, -forward.z, 0,
-            0, 0, 0, 1
-        };
+        if (type == ROTATION) {
+            return {
+                right.x, right.y, right.z, 0,
+                up.x, up.y, up.z, 0,
+                -forward.x, -forward.y, -forward.z, 0,
+                0, 0, 0, 1
+            };
+        }
 
-        Mat4 translation = {
-            1, 0, 0, -position.x,
-            0, 1, 0, -position.y,
-            0, 0, 1, -position.z,
-            0, 0, 0, 1
-        };
+        if (type == TRANSLATION) {
+            return {
+                1, 0, 0, -position.x,
+                0, 1, 0, -position.y,
+                0, 0, 1, -position.z,
+                0, 0, 0, 1
+            };
+        }
 
-        return mat4Mul(rotation, translation);
-    }
+        if (type == ROTATION_AND_TRANSLATION) {
+            Mat4 rotation = {
+                right.x, right.y, right.z, 0,
+                up.x, up.y, up.z, 0,
+                -forward.x, -forward.y, -forward.z, 0,
+                0, 0, 0, 1
+            };
+            
+            Mat4 translation = {
+                1, 0, 0, -position.x,
+                0, 1, 0, -position.y,
+                0, 0, 1, -position.z,
+                0, 0, 0, 1
+            };
 
-    Mat4 skyboxView() const {
-        Vec3 forward = getForward();
-        Vec3 right = getRight();
-        Vec3 up = getUp();
-
-        Mat4 rotation = {
-            right.x, right.y, right.z, 0,
-            up.x, up.y, up.z, 0,
-            -forward.x, -forward.y, -forward.z, 0,
-            0, 0, 0, 1
-        };
-
-        return rotation;
+            return mat4Mul(rotation, translation);
+        }
     }
 
     Mat4 perspective(float fov, float aspect, float near, float far) const {

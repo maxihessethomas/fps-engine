@@ -40,10 +40,14 @@ public:
     unsigned int id;
     int width, height, nrChannels;
 
-    CubeMap(const char* faces[6]) {
+    CubeMap() {
         glGenTextures(1, &id);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+    }
 
+    void bind() { glBindTexture(GL_TEXTURE_CUBE_MAP, id); }
+    void unbind() { glBindTexture(GL_TEXTURE_CUBE_MAP, 0); }
+
+    void init(const char* faces[6]) {
         glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
@@ -61,10 +65,6 @@ public:
                 std::cout << faces[i];
             }
         }
-    }
-
-    void bind() {
-        glBindTexture(GL_TEXTURE_CUBE_MAP, id);
     }
 
 };
