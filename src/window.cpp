@@ -54,10 +54,9 @@ public:
         glfwPollEvents();
     }
 
-    ~Window() {
-        if (window) {
-            glfwDestroyWindow(window);
-        }
+    void destroy() {
+        glfwDestroyWindow(window);
         glfwTerminate();
+        printf("terminated");
     }
 };

@@ -14,9 +14,11 @@ struct Vec3 {
 float aspect(int width, int height) {
     return (float)width/ (float)height;
 }
+
 float degreesToRadians(float angle) {
     return angle * (M_PI / 180);
 }
+
 float vec3Length(Vec3 vector) {
     return (float){
         sqrt((vector.x * vector.x) + (vector.y * vector.y) + (vector.z * vector.z))
@@ -35,6 +37,7 @@ Vec3 vec3Normalize(Vec3 vector) {
         .z = vector.z / length
     };
 }
+
 Vec3 vec3Cross(Vec3 a, Vec3 b) {
     return (Vec3) {
         a.y * b.z - a.z * b.y,
@@ -42,6 +45,7 @@ Vec3 vec3Cross(Vec3 a, Vec3 b) {
         a.x * b.y - a.y * b.x
     };
 }
+
 Vec3 vec4ToNdc(Vec4 vector) {
     return (Vec3){
         .x = vector.x / vector.w,
@@ -85,6 +89,7 @@ Mat4 mat4Identity() {
         .matrix[3][3] = 1.0f
     };
 }
+
 Mat4 mat4Translate(Vec3 vector) {
     return {
         1, 0, 0, vector.x,
@@ -92,6 +97,39 @@ Mat4 mat4Translate(Vec3 vector) {
         0, 0, 1, vector.z,
         0, 0, 0, 1
     };
+}
+
+Mat4 mat4RotateZ(float degrees) {
+	Mat4 result = mat4Identity();
+	float cos0 = cosf(degreesToRadians(degrees));
+	float sin0 = sinf(degreesToRadians(degrees));
+	result.matrix[0][0] = cos0;
+	result.matrix[0][1] = -sin0;
+	result.matrix[1][0] = sin0;
+	result.matrix[1][1] = cos0;
+	return result;
+}
+
+Mat4 mat4RotateX(float degrees) {
+	Mat4 result = mat4Identity();
+	float cos0 = cosf(degreesToRadians(degrees));
+	float sin0 = sinf(degreesToRadians(degrees));
+	result.matrix[1][1] = cos0;
+	result.matrix[1][2] = -sin0;
+	result.matrix[2][1] = sin0;
+	result.matrix[2][2] = cos0;
+	return result;
+}
+
+Mat4 mat4RotateY(float degrees) {
+	Mat4 result = mat4Identity();
+	float cos0 = cosf(degreesToRadians(degrees));
+	float sin0 = sinf(degreesToRadians(degrees));
+	result.matrix[0][0] = cos0;
+	result.matrix[0][2] = sin0;
+	result.matrix[2][0] = -sin0;
+	result.matrix[2][2] = cos0;
+	return result;
 }
 
 Mat4 mat4Mul(Mat4 a, Mat4 b) {

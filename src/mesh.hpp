@@ -14,15 +14,6 @@
 
 class Mesh {
 public:
-    VAO VAO;
-    VBO VBO;
-    EBO EBO;
-    int indexCount;
-    std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
-    std::string vertexShaderSource, fragmentShaderSource;
-    Shader shader;
-    Texture texture;
 
     Mesh(const char* vertexShaderPath, 
         const char* fragmentShaderPath, 
@@ -59,14 +50,20 @@ public:
         EBO.unbind();
     }
 
-    void draw(Camera camera, Light light, int SCREEN_W, int SCREEN_H, VIEW_POSITION viewposition) const {
+    void draw(Camera camera, 
+        Light light, 
+        int SCREEN_W, 
+        int SCREEN_H, 
+        VIEW_POSITION viewposition,
+        Mat4 rotation
+    ) const {
         texture.bind();
         VAO.bind();
 
         if (viewposition == SCENE) {
             shader.use();
             shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
-            shader.mat4Set("model", mat4Identity()); 
+            shader.mat4Set("model", rotation); 
             shader.mat4Set("view", camera.view(ROTATION_AND_TRANSLATION, viewposition));
             shader.vec3Set("viewPos", camera.position);
             shader.vec3Set("material.ambient", {0.0f, 0.0f, 0.0f});
@@ -100,4 +97,15 @@ public:
         VAO.unbind();
         texture.unbind();
     }
+
+private: 
+    VAO VAO;
+    VBO VBO;
+    EBO EBO;
+    int indexCount;
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+    std::string vertexShaderSource, fragmentShaderSource;
+    Shader shader;
+    Texture texture;
 };

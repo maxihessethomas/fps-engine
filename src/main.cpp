@@ -31,35 +31,8 @@ const float GRAVITY = 9.81f;
 bool WIREFRAME = false;
 
 int main() {
-    if (!glfwInit() ){
-        printf("INFO: GLFW FAILED");
-    }
-
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
     Window window;
     window.init(SCREEN_W, SCREEN_H, "fps");
-
-/*     GLFWwindow* window = glfwCreateWindow(SCREEN_W, SCREEN_H, "fps", NULL, NULL);
-    if (!window) {
-        printf("INFO: window creation failed");
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(0);
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        printf("INFO: GLAD failed");
-        glfwTerminate();
-    } */
-
-    glEnable(GL_DEPTH_TEST);
 
     Camera camera = {
         {0, 2, 3},
@@ -70,11 +43,13 @@ int main() {
         0.1f,
         100.0f
     };
+    
+    window.setInputMode(camera);
 
-    glfwSetWindowUserPointer(window.window, &camera);
+/*     glfwSetWindowUserPointer(window.window, &camera);
     glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window.window, Camera::mouseCallback);
-
+ */
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
@@ -105,6 +80,9 @@ int main() {
     Mesh level("src/basic.vert", "src/basic.frag", "assets/level.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
     Mesh cube("src/basic.vert", "src/basic.frag", "assets/cube.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
 
+    float cubeRotationX = 0.0f;
+    float cubeRotationZ = 0.0f;
+
     while (!window.shouldClose()) {
 
         double currentTime = glfwGetTime();
@@ -112,18 +90,18 @@ int main() {
         initTime = currentTime;
 
         camera.keyInput(window.window, deltaTime);
-        camera.gravity(GRAVITY, deltaTime);
+/*         camera.gravity(GRAVITY, deltaTime);
         if (glfwGetKey(window.window, GLFW_KEY_1) == GLFW_PRESS) {
             WIREFRAME = !WIREFRAME;
-        }
+        } */
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         skybox.draw(camera, SCREEN_W, SCREEN_H);
-        pistol.draw(camera, light, SCREEN_W, SCREEN_H, CAMERA);
-        level.draw(camera, light, SCREEN_W, SCREEN_H, SCENE);
-        cube.draw(camera, light, SCREEN_W, SCREEN_H, SCENE);
+        pistol.draw(camera, light, SCREEN_W, SCREEN_H, CAMERA, mat4Identity());
+        level.draw(camera, light, SCREEN_W, SCREEN_H, SCENE, mat4Identity());
+        cube.draw(camera, light, SCREEN_W, SCREEN_H, SCENE, mat4Mul(mat4RotateX(cubeRotationX), mat4RotateZ(cubeRotationZ)));
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -131,21 +109,17 @@ int main() {
 
         ImGui::Begin("Stats");
         ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+        ImGui::SliderFloat("RotationX", &cubeRotationX, 0.0f, 90.0f);
+        ImGui::SliderFloat("RotationZ", &cubeRotationZ, 0.0f, 90.0f);
         ImGui::End();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+        window.keyInput();
         window.update();
     }
 
-/*     GLFWwindow* debug = glfwCreateWindow(600, 600, "debug", NULL, NULL);
-    if (!debug) {
-        glfwTerminate();
-        return -1;
-    }
-
-    glfwDestroyWindow(debug);*/
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

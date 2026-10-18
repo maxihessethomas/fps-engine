@@ -45,10 +45,20 @@ public:
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(window, true);
         }
+/*         static bool previousTab = false;
+        bool tab = glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS;
+        if (tab && !previousTab) {
+
+        } */
+    }
+
+    void setInputMode(Camera camera) {
+        glfwSetWindowUserPointer(window, &camera);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetCursorPosCallback(window, Camera::mouseCallback);
     }
 
     void update() {
-        keyInput();
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
