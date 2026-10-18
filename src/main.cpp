@@ -64,8 +64,8 @@ int main() {
     Skybox skybox("src/skybox.vert", "src/skybox.frag", skyboxPath);
 
     Light light = {
-        {0, 10, 0},
-        {0.1f, 0.1f, 0.1f},
+        {0, 5, 0},
+        {0.5f, 0.5f, 0.5f},
         {0.8f, 0.8f, 0.8f},
         {1.0f, 1.0f, 1.0f}
     };

@@ -54,6 +54,23 @@ Vec3 vec4ToNdc(Vec4 vector) {
     };
 }
 
+Vec4 vec3ToVec4(Vec3 vector) {
+    return {
+        vector.x,
+        vector.y, 
+        vector.z,
+        1.0f
+    };
+}
+
+Vec3 vec4ToVec3(Vec4 vector) {
+    return {
+        vector.x,
+        vector.y,
+        vector.z
+    };
+}
+
 Mat4 mat4Scale(float scalar) {
 	return {
         scalar, 0, 0, 0,

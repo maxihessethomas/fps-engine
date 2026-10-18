@@ -87,7 +87,7 @@ void Mesh::draw(Camera camera,
         shader.use();
         shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
         shader.mat4Set("model", model); 
-        shader.mat4Set("view", camera.view(ROTATION_AND_TRANSLATION, viewposition));
+        shader.mat4Set("view", camera.view(ROTATION_AND_TRANSLATION, SCENE));
         shader.vec3Set("viewPos", camera.position);
         shader.vec3Set("material.ambient", {0.0f, 0.0f, 0.0f});
         shader.vec3Set("material.diffuse", {1.0f, 1.0f, 1.0f});
@@ -109,7 +109,9 @@ void Mesh::draw(Camera camera,
         shader.vec3Set("material.diffuse", {1.0f, 1.0f, 1.0f});
         shader.vec3Set("material.specular", {0.5f, 0.5f, 0.5f});
         shader.floatSet("material.shininess", 32.0f);
-        shader.vec3Set("light.position", light.position);
+        shader.vec3Set("light.position", vec4ToVec3(
+            mat4MulVec4(camera.view(ROTATION_AND_TRANSLATION, CAMERA), 
+            {light.position.x, light.position.y, light.position.z, 1.0f})));
         shader.vec3Set("light.ambient",  light.ambient);
         shader.vec3Set("light.diffuse",  light.diffuse);
         shader.vec3Set("light.specular", light.specular);
