@@ -1,0 +1,5 @@
+TODO:
+- [] Collision
+- [X] GRAVITY
+– [] FPS Movement
+– [] Window Class

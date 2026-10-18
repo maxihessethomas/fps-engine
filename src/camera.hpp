@@ -19,9 +19,6 @@ public:
     float velocityY;
 
     void keyInput(GLFWwindow* window, float deltaTime) {
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-            glfwSetWindowShouldClose(window, true);
-        }
 
         Vec3 forward = getForward();
         Vec3 right = getRight();
@@ -192,3 +189,13 @@ public:
         };
     }
 };
+
+/* void gravity(Camera camera, float gravity, float deltaTime) {
+    if (deltaTime > 0.1) {
+        camera.velocityY += gravity * 0.1;
+        camera.position.y -= camera.velocityY * 0.1;
+    } else {
+        camera.velocityY += gravity * deltaTime;
+        camera.position.y -= camera.velocityY * deltaTime;
+    };
+} */

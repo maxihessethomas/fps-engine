@@ -20,6 +20,7 @@
 #include "buffer.hpp"
 #include "light.hpp"
 #include "skybox.h"
+#include "window.h"
 
 #include "collision.hpp"
 
@@ -42,7 +43,10 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(SCREEN_W, SCREEN_H, "fps", NULL, NULL);
+    Window window;
+    window.init(SCREEN_W, SCREEN_H, "fps");
+
+/*     GLFWwindow* window = glfwCreateWindow(SCREEN_W, SCREEN_H, "fps", NULL, NULL);
     if (!window) {
         printf("INFO: window creation failed");
         glfwTerminate();
@@ -53,7 +57,7 @@ int main() {
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         printf("INFO: GLAD failed");
         glfwTerminate();
-    }
+    } */
 
     glEnable(GL_DEPTH_TEST);
 
@@ -67,14 +71,14 @@ int main() {
         100.0f
     };
 
-    glfwSetWindowUserPointer(window, &camera);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetCursorPosCallback(window, Camera::mouseCallback);
+    glfwSetWindowUserPointer(window.window, &camera);
+    glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window.window, Camera::mouseCallback);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplGlfw_InitForOpenGL(window.window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
   
     const char* skyboxPath[] = {
@@ -99,14 +103,17 @@ int main() {
 
     Mesh pistol("src/basic.vert", "src/basic.frag", "assets/pistol.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
     Mesh level("src/basic.vert", "src/basic.frag", "assets/level.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
+    Mesh cube("src/basic.vert", "src/basic.frag", "assets/cube.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
 
-    while (!glfwWindowShouldClose(window)) {
+    while (window.shouldClose()) {
+
         double currentTime = glfwGetTime();
         float deltaTime = static_cast<float>(currentTime - initTime);
         initTime = currentTime;
 
-        camera.keyInput(window, deltaTime);
-        if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+        camera.keyInput(window.window, deltaTime);
+        camera.gravity(GRAVITY, deltaTime);
+        if (glfwGetKey(window.window, GLFW_KEY_1) == GLFW_PRESS) {
             WIREFRAME = !WIREFRAME;
         }
 
@@ -116,6 +123,7 @@ int main() {
         skybox.draw(camera, SCREEN_W, SCREEN_H);
         pistol.draw(camera, light, SCREEN_W, SCREEN_H, CAMERA);
         level.draw(camera, light, SCREEN_W, SCREEN_H, SCENE);
+        cube.draw(camera, light, SCREEN_W, SCREEN_H, SCENE);
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -128,8 +136,7 @@ int main() {
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+        window.update();
     }
 
 /*     GLFWwindow* debug = glfwCreateWindow(600, 600, "debug", NULL, NULL);
@@ -142,8 +149,7 @@ int main() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
-    glfwDestroyWindow(window);
-    glfwTerminate();
+    window.destroy();
     return 0;
 }
 

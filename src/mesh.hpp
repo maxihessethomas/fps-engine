@@ -8,6 +8,7 @@
 #include "texture.hpp"
 #include "camera.hpp"
 #include "light.hpp"
+#include "collision.hpp"
 
 #include <vector>
 
