@@ -46,6 +46,7 @@ void readOBJ(const char* path,
             positions.push_back(position);
         } else if (type == "vt") {
             stream >> texcoord.x >> texcoord.y;
+            texcoord.y = 1.0f - texcoord.y;
             texcoords.push_back(texcoord);
         } else if (type == "vn") {
             stream >> normal.x >> normal.y >> normal.z;
