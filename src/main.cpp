@@ -44,12 +44,8 @@ int main() {
         100.0f
     };
     
-    window.setInputMode(camera);
+    window.setInputMode(GLFW_CURSOR_NORMAL, camera);
 
-/*     glfwSetWindowUserPointer(window.window, &camera);
-    glfwSetInputMode(window.window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetCursorPosCallback(window.window, Camera::mouseCallback);
- */
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
@@ -76,12 +72,13 @@ int main() {
 
     double initTime = glfwGetTime();
 
-    Mesh pistol("src/basic.vert", "src/basic.frag", "assets/pistol.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
+    Mesh pistol("src/basic.vert", "src/basic.frag", "assets/c_shotgun.obj", "textures/c_shotgun.png", light, camera, SCREEN_W, SCREEN_H);
     Mesh level("src/basic.vert", "src/basic.frag", "assets/level.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
     Mesh cube("src/basic.vert", "src/basic.frag", "assets/cube.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
 
-    float cubeRotationX = 0.0f;
-    float cubeRotationZ = 0.0f;
+    static float cubeRotationX = 0.0f;
+    static float cubeRotationZ = 0.0f;
+    Vec3 pistolOffset = {0.7f, -0.4f, -0.8f};
 
     while (!window.shouldClose()) {
 
@@ -99,7 +96,7 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         skybox.draw(camera, SCREEN_W, SCREEN_H);
-        pistol.draw(camera, light, SCREEN_W, SCREEN_H, CAMERA, mat4Identity());
+        pistol.draw(camera, light, SCREEN_W, SCREEN_H, CAMERA,mat4Mul(mat4Mul(mat4Translate(pistolOffset), mat4Scale(0.1f)), mat4RotateY(180.0f)));
         level.draw(camera, light, SCREEN_W, SCREEN_H, SCENE, mat4Identity());
         cube.draw(camera, light, SCREEN_W, SCREEN_H, SCENE, mat4Mul(mat4RotateX(cubeRotationX), mat4RotateZ(cubeRotationZ)));
 
@@ -109,14 +106,18 @@ int main() {
 
         ImGui::Begin("Stats");
         ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-        ImGui::SliderFloat("RotationX", &cubeRotationX, 0.0f, 90.0f);
-        ImGui::SliderFloat("RotationZ", &cubeRotationZ, 0.0f, 90.0f);
+        ImGui::SliderFloat("RotationX", &cubeRotationX, 0.0f, 90.0f, "%.1f", ImGuiSliderFlags_NoInput);
+        ImGui::SliderFloat("RotationZ", &cubeRotationZ, 0.0f, 90.0f, "%.1f", ImGuiSliderFlags_NoInput);
+        ImGui::SliderFloat("Pistol X", &pistolOffset.x, 0.0f, 10.0f, "%.1f", ImGuiSliderFlags_NoInput);
+        ImGui::SliderFloat("Pistol Y", &pistolOffset.y, 0.0f, -10.0f, "%.1f", ImGuiSliderFlags_NoInput);
+        ImGui::SliderFloat("Pistol Z", &pistolOffset.z, 0.0f, -10.0f, "%.1f", ImGuiSliderFlags_NoInput);
         ImGui::End();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         window.keyInput();
+        window.updateInputMode();
         window.update();
     }
 

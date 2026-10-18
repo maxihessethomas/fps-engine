@@ -54,6 +54,15 @@ Vec3 vec4ToNdc(Vec4 vector) {
     };
 }
 
+Mat4 mat4Scale(float scalar) {
+	return {
+        scalar, 0, 0, 0,
+        0, scalar, 0, 0,
+        0, 0, scalar, 0,
+        0, 0, 0, 1
+    };
+}
+
 // VEC4 //
 Vec4 mat4MulVec4(Mat4 matrix, Vec4 vector) {
     return (Vec4){

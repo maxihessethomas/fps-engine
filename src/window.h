@@ -4,6 +4,8 @@
 #include "glad.h"
 #include "GLFW/glfw3.h"
 
+#include "camera.hpp"
+
 class Window {
 public: 
     GLFWwindow* window = nullptr;
@@ -42,20 +44,35 @@ public:
     }
 
     void keyInput() {
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && inputMode) {
             glfwSetWindowShouldClose(window, true);
         }
-/*         static bool previousTab = false;
-        bool tab = glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS;
-        if (tab && !previousTab) {
-
-        } */
     }
 
-    void setInputMode(Camera camera) {
+    void updateInputMode() {
+        static bool prevTab = false;
+        bool tab = glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS;
+        if (tab && !prevTab) {
+            uiMode = !uiMode;
+            if (uiMode) {
+                inputMode = false;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                glfwSetCursorPosCallback(window, 0);
+            } else {
+                inputMode = true;
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                glfwSetCursorPosCallback(window, Camera::mouseCallback);
+            }
+        }
+        prevTab = tab;
+    }
+
+    void setInputMode(GLenum inputMode, Camera& camera) {
         glfwSetWindowUserPointer(window, &camera);
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        glfwSetCursorPosCallback(window, Camera::mouseCallback);
+        glfwSetInputMode(window, GLFW_CURSOR, inputMode);
+/*         if (inputMode != GLFW_CURSOR_NORMAL) {
+            glfwSetCursorPosCallback(window, Camera::mouseCallback);
+        } */
     }
 
     void update() {
@@ -68,6 +85,9 @@ public:
         glfwTerminate();
         printf("terminated");
     }
+
+private:
+    bool uiMode, inputMode;
 };
 
 #endif
