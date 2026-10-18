@@ -105,7 +105,7 @@ int main() {
     Mesh level("src/basic.vert", "src/basic.frag", "assets/level.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
     Mesh cube("src/basic.vert", "src/basic.frag", "assets/cube.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
 
-    while (window.shouldClose()) {
+    while (!window.shouldClose()) {
 
         double currentTime = glfwGetTime();
         float deltaTime = static_cast<float>(currentTime - initTime);
