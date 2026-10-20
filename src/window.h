@@ -8,6 +8,10 @@
 
 class Window {
 public: 
+
+    bool debugVisible = false; 
+    bool chatVisible = false;
+    bool gameVisible = false;
     GLFWwindow* window = nullptr;
 
     bool init(int width, int height, const char* name) {
@@ -44,17 +48,23 @@ public:
     }
 
     void keyInput() {
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS && inputMode) {
-            glfwSetWindowShouldClose(window, true);
-        }
+/*         if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+            
+        } */
+    }
+
+    void enableBackFaceCulling() {
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
+        glFrontFace(GL_CW);  
     }
 
     void updateInputMode() {
-        static bool prevTab = false;
-        bool tab = glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS;
-        if (tab && !prevTab) {
-            uiMode = !uiMode;
-            if (uiMode) {
+        static bool prevescape = false;
+        bool escape = glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS;
+        if (escape && !prevescape) {
+            debugVisible = !debugVisible;
+            if (debugVisible) {
                 inputMode = false;
                 glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                 glfwSetCursorPosCallback(window, 0);
@@ -64,15 +74,55 @@ public:
                 glfwSetCursorPosCallback(window, Camera::mouseCallback);
             }
         }
-        prevTab = tab;
+        prevescape = escape;
     }
+
+/* bool updateInputMode(Camera camera) {
+        static bool prevescape = false;
+        static bool prevT = false;
+        bool escape = glfwGetKey(window, GLFW_KEY_escape) == GLFW_PRESS;
+        bool T = glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS;
+
+        if (escape && !prevescape || T && !prevT) {
+            uiVisible = !uiVisible;
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetCursorPosCallback(window, 0);
+            if (escape && !prevescape) {
+                debug = !debug;
+            }
+            if (T && !prevT) {
+                chat = !chat;
+            }
+            prevescape = escape;
+            prevT
+        } else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetCursorPosCallback(window, Camera::mouseCallback);
+        }
+
+        if (escape && !prevescape) {
+            debugVisible = !debugVisible;
+            chatVisible = false;
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetCursorPosCallback(window, 0);
+        } else if (T && !prevT) {
+            chatVisible = !chatVisible;
+            debugVisible = false;
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            glfwSetCursorPosCallback(window, 0); 
+        } else {
+            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetCursorPosCallback(window, Camera::mouseCallback);
+        }
+
+        prevescape = escape;
+        prevT = T;
+
+    } */
 
     void setInputMode(GLenum inputMode, Camera& camera) {
         glfwSetWindowUserPointer(window, &camera);
         glfwSetInputMode(window, GLFW_CURSOR, inputMode);
-/*         if (inputMode != GLFW_CURSOR_NORMAL) {
-            glfwSetCursorPosCallback(window, Camera::mouseCallback);
-        } */
     }
 
     void update() {
@@ -85,9 +135,8 @@ public:
         glfwTerminate();
         printf("terminated");
     }
-
 private:
-    bool uiMode, inputMode;
+    bool inputMode;
 };
 
 #endif

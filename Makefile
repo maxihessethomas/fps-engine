@@ -8,7 +8,8 @@ IMGUI_INC = lib/imgui
 IMGUI_SRC = $(IMGUI_INC)/imgui.cpp $(IMGUI_INC)/imgui_draw.cpp \
 			$(IMGUI_INC)/imgui_tables.cpp $(IMGUI_INC)/imgui_widgets.cpp \
 			$(IMGUI_INC)/backends/imgui_impl_glfw.cpp \
-			$(IMGUI_INC)/backends/imgui_impl_opengl3.cpp
+			$(IMGUI_INC)/backends/imgui_impl_opengl3.cpp \
+			$(IMGUI_INC)/imgui_demo.cpp
 IMGUI_OBJ = $(IMGUI_SRC:.cpp=.o)
 
 CXXFLAGS = -std=c++17 -Wall -I$(GLFW_INC) -I$(IMGUI_INC) -Isrc -I.
