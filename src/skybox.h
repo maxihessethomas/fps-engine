@@ -1,5 +1,7 @@
 #pragma once
 
+#include "include/PrecompiledHeaders.h"
+
 #include "buffer.hpp"
 #include "math.hpp"
 #include "import.hpp"
@@ -8,8 +10,6 @@
 #include "texture.hpp"
 #include "camera.hpp"
 #include "light.hpp"
-
-#include <vector>
 
 class Skybox {
 public: 

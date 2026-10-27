@@ -1,15 +1,14 @@
 #pragma once
 
+#include "include/PrecompiledHeaders.h"
+
 #include "GLFW/glfw3.h"
 #include "glad.h"
 #include "vertex.h"
 
-#include <vector>
-
 class VBO {
 public:
     unsigned int id;
-
     VBO() {
         glGenBuffers(1, &id);
     }

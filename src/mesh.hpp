@@ -1,5 +1,7 @@
 #pragma once
 
+#include "include/PrecompiledHeaders.h"
+
 #include "buffer.hpp"
 #include "math.hpp"
 #include "import.hpp"
@@ -10,22 +12,29 @@
 #include "light.hpp"
 #include "collision.hpp"
 
-#include <vector>
-
 class Mesh {
 public:
+    GLenum drawMode;
 
-    Mesh(const char* vertexShaderPath, const char* fragmentShaderPath, 
+    Mesh(
+        const char* vertexShaderPath, const char* fragmentShaderPath,
         const char* objFilePath, const char* textureFilePath,
-        Light light, Camera camera, int SCREEN_W, int SCREEN_H
+        Light light, 
+        Camera camera, 
+        int SCREEN_W, 
+        int SCREEN_H
     );
 
-    void draw(Camera camera, Light light, 
+    void draw(Camera camera, 
+        Light light, 
         int SCREEN_W, int SCREEN_H, 
         VIEW_POSITION viewposition, Mat4 rotation
     ) const;
 
-private: 
+    float getHeightFromVertexBelow(Camera camera);
+    std::array<Vec3, 8> getHitBoxVertices();
+
+private:
     VAO VAO;
     VBO VBO;
     EBO EBO;
@@ -33,18 +42,19 @@ private:
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     std::string vertexShaderSource, fragmentShaderSource;
+    size_t vertex_count;
     Shader shader;
     Texture texture;
 };
 
-Mesh::Mesh(const char* vertexShaderPath, 
-        const char* fragmentShaderPath, 
+Mesh::Mesh(const char* vertexShaderPath,
+        const char* fragmentShaderPath,
         const char* objFilePath,
         const char* textureFilePath,
         Light light,
         Camera camera,
         int SCREEN_W,
-        int SCREEN_H) 
+        int SCREEN_H)
 {
     vertexShaderSource = readShader(vertexShaderPath);
     fragmentShaderSource = readShader(fragmentShaderPath);
@@ -123,3 +133,18 @@ void Mesh::draw(Camera camera,
     VAO.unbind();
     texture.unbind();
 }
+
+float Mesh::getHeightFromVertexBelow(Camera camera) {
+
+}
+
+/* bool IsObjectInObject(std::vector<Vertex> a, std::vector<Vertex> b) {
+    for (size_t i = 0; i < vertex)
+} */
+
+/* std::array<Vec3, 8> getHitBoxVertices(std::vector<Vertex> vertices) {
+    return {
+        std::max_element(vertices.begin(), vertices.end(), [](const Vertex& a, const Vertex& b) { return a.position.x < b.position.x; }),
+        std::max
+    }   
+} */

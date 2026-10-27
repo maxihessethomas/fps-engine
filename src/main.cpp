@@ -1,5 +1,4 @@
-#include <string>
-#include <stdio.h>
+#include "include/PrecompiledHeaders.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 
@@ -61,7 +60,7 @@ int main() {
         "textures/skybox/back.jpg"
     };
 
-    Skybox skybox("src/skybox.vert", "src/skybox.frag", skyboxPath);
+    Skybox skybox("shaders/skybox.vert", "shaders/skybox.frag", skyboxPath);
 
     Light light = {
         {0, 5, 0},
@@ -72,12 +71,11 @@ int main() {
 
     double initTime = glfwGetTime();
 
-    Mesh shotgun("src/basic.vert", "src/basic.frag", "assets/c_shotgun.obj", "textures/c_shotgun.png", light, camera, SCREEN_W, SCREEN_H);
-    Mesh level("src/basic.vert", "src/basic.frag", "assets/level.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
-    Mesh cube("src/basic.vert", "src/basic.frag", "assets/cube.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
-    Mesh sniper("src/basic.vert", "src/basic.frag", "assets/sniper.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
-    Mesh pill("src/basic.vert", "src/basic.frag", "assets/pill.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
-
+    Mesh shotgun("shaders/lighting.vert", "shaders/lighting.frag", "assets/c_shotgun.obj", "textures/c_shotgun.png", light, camera, SCREEN_W, SCREEN_H);
+    Mesh level("shaders/lighting.vert", "shaders/lighting.frag", "assets/plane.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
+    Mesh cube("shaders/lighting.vert", "shaders/lighting.frag", "assets/cube.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
+  /*   Mesh pill("shaders/lighting.vert", "shaders/lighting.frag", "assets/pill.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
+ */
     static float cubeRotationX = 0.0f;
     static float cubeRotationZ = 0.0f;
     Vec3 shotgunOffset = {0.7f, -0.4f, -0.8f};
@@ -88,6 +86,11 @@ int main() {
     bool gravity = false;
     bool windowShouldClose = false;
     bool backFaceCulling = false;
+    bool wireframeMode = false;
+
+/*     Vec2 data = {0.0f, 0.0f};
+    Vec2* pointer = &data;
+    printf("%f", sizeof(pointer)); */
 
     ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration;
 
@@ -103,6 +106,17 @@ int main() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);  */
+
+/*     unsigned int heightFBO, heightTexture;
+    glGenFramebuffers(1, &heightFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, heightFBO);
+    glGenTextures(1, &heightTexture);
+    glBindTexture(GL_TEXTURE_2D, heightTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 512, 512, 0, GL_RED, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, heightTexture, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); */
 
     while (!window.shouldClose()) {
 
@@ -123,18 +137,19 @@ int main() {
 
         skybox.draw(camera, SCREEN_W, SCREEN_H);
         level.draw(camera, light, SCREEN_W, SCREEN_H, SCENE, mat4Translate(levelOffset));
-        pill.draw(camera, light, SCREEN_W, SCREEN_H, SCENE, mat4Identity());
-        if (backFaceCulling) {
+/*         pill.draw(camera, light, SCREEN_W, SCREEN_H, SCENE, mat4Identity());
+ */        if (backFaceCulling) {
             window.enableBackFaceCulling();
             cube.draw(camera, light, SCREEN_W, SCREEN_H, SCENE, mat4Mul(mat4RotateX(cubeRotationX), mat4RotateZ(cubeRotationZ)));
             glEnable(GL_DEPTH_TEST);
         }
-        if (shotgundraw == true) {
+        if (shotgundraw) {
             shotgun.draw(camera, light, SCREEN_W, SCREEN_H, CAMERA, mat4Mul(mat4Mul(mat4Translate(shotgunOffset), mat4Scale(0.1f)), mat4RotateY(180.0f)));
         }
-        if (sniperdraw == true) {
-            sniper.draw(camera, light, SCREEN_W, SCREEN_H, CAMERA, mat4Mul(mat4Mul(mat4Translate({0.7f, -0.4f, -0.8f}), mat4Scale(1.0f)), mat4RotateY(0)));
-        }
+        if (camera.position.y - 2 <= -5) {
+            camera.velocityY = 0;
+            camera.position.y = -5 + 2;
+        } 
 
         if (window.debugVisible) {
             ImGui_ImplOpenGL3_NewFrame();
@@ -148,7 +163,6 @@ int main() {
             ImGui::SliderFloat("Shotgun Y", &shotgunOffset.y, 0.0f, -10.0f, "%.1f", ImGuiSliderFlags_NoInput);
             ImGui::SliderFloat("Shotgun Z", &shotgunOffset.z, 0.0f, -10.0f, "%.1f", ImGuiSliderFlags_NoInput);
             ImGui::Checkbox("Shotgun", &shotgundraw);
-            ImGui::Checkbox("Sniper", &sniperdraw);
             ImGui::End();
 
             ImGui::Begin("Level");
@@ -161,6 +175,7 @@ int main() {
             ImGui::SliderFloat("RotationX", &cubeRotationX, 0.0f, 90.0f, "%.1f", ImGuiSliderFlags_NoInput);
             ImGui::SliderFloat("RotationZ", &cubeRotationZ, 0.0f, 90.0f, "%.1f", ImGuiSliderFlags_NoInput);
             ImGui::Checkbox("Backface Culling", &backFaceCulling);
+            ImGui::Checkbox("Wireframe mode", &wireframeMode);
             ImGui::End();
 
             ImGui::Begin("Player", NULL, flags);

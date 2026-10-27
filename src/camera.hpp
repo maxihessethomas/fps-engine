@@ -17,43 +17,14 @@ class Camera {
 public:
     Vec3 position = {0, 0, 0};
     float yaw = 0.0f, pitch = 0.0f, roll = 0.0f, fov = 0.0f, near = 0.0f, far = 0.0f;
-
     float velocityY;
     float speed = 1.0f;
 
+/*     Mesh hitbox("assets/pill.obj", "textures/grid.png", NULL, NULL, NULL, NULL); */
+
     void keyInput(GLFWwindow* window, float deltaTime);
-
-    static void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
-        Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
-        if (camera) {
-            camera->mouseInput(xpos, ypos, 0.002);
-        }
-    }
-
-    void mouseInput(double xpos, double ypos, float sensitivity) {
-        static bool firstMouse;
-        static float lastX;
-        static float lastY;
-
-        if (firstMouse) {
-            lastX = xpos;
-            lastY = ypos;
-            firstMouse = false;
-            return;
-        }
-
-        float dx = xpos - lastX;
-        float dy = ypos - lastY;
-
-        lastX = xpos;
-        lastY = ypos;
-
-        yaw += dx * sensitivity;
-        pitch -= dy * sensitivity;
-
-        if (pitch > degreesToRadians(89)) pitch = degreesToRadians(89);
-        if (pitch < degreesToRadians(-89)) pitch = degreesToRadians(-89);
-    }
+    static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+    void mouseInput(double xpos, double ypos, float sensitivity);
 
     void print() const {
         std::cout << "Position: (" << position.x << " " << position.y << " " << position.z << ")"
@@ -136,13 +107,14 @@ void Camera::keyInput(GLFWwindow* window, float deltaTime) {
         position.z -= speed * right.z * deltaTime;
     }
 
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+/*     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
         position.y += speed * deltaTime;
     }
 
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
         position.y -= speed * deltaTime;
-    }
+        
+    } */
 }
 
 Mat4 Camera::view(VIEW_TYPE viewtype, VIEW_POSITION viewposition) const {
@@ -196,6 +168,37 @@ Mat4 Camera::view(VIEW_TYPE viewtype, VIEW_POSITION viewposition) const {
     }
 }
 
+void Camera::mouseCallback(GLFWwindow* window, double xpos, double ypos) {
+    Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
+    if (camera) {
+        camera->mouseInput(xpos, ypos, 0.002);
+    }
+}
+
+void Camera::mouseInput(double xpos, double ypos, float sensitivity) {
+    static bool firstMouse;
+    static float lastX;
+    static float lastY;
+
+    if (firstMouse) {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+        return;
+    }
+
+    float dx = xpos - lastX;
+    float dy = ypos - lastY;
+
+    lastX = xpos;
+    lastY = ypos;
+
+    yaw += dx * sensitivity;
+    pitch -= dy * sensitivity;
+
+    if (pitch > degreesToRadians(89)) pitch = degreesToRadians(89);
+    if (pitch < degreesToRadians(-89)) pitch = degreesToRadians(-89);
+}
 /* void gravity(Camera camera, float gravity, float deltaTime) {
     if (deltaTime > 0.1) {
         camera.velocityY += speed * gravity * 0.1;

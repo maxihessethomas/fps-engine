@@ -1,11 +1,6 @@
 #pragma once
 
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <iostream>
-#include <string>
-#include <algorithm>
+#include "include/PrecompiledHeaders.h"
 
 #include "vertex.h"
 #include "import.hpp"

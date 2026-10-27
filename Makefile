@@ -12,8 +12,13 @@ IMGUI_SRC = $(IMGUI_INC)/imgui.cpp $(IMGUI_INC)/imgui_draw.cpp \
 			$(IMGUI_INC)/imgui_demo.cpp
 IMGUI_OBJ = $(IMGUI_SRC:.cpp=.o)
 
-CXXFLAGS = -std=c++17 -Wall -I$(GLFW_INC) -I$(IMGUI_INC) -Isrc -I.
-CFLAGS = -Wall -I.
+CXXFLAGS = -std=c++17 \
+	-Wall -I$(GLFW_INC) \
+	-I$(IMGUI_INC) \
+	-Iinclude \
+	-Isrc \
+	-I.
+CFLAGS = -Wall -Iinclude -I.
 LDFLAGS = -L$(GLFW_LIB) -lglfw3 -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo -framework QuartzCore
 
 TARGET = fps
@@ -33,10 +38,9 @@ glad.o: src/glad.c
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -f main.o glad.o $(TARGET)
+	rm -f main.o glad.o $(IMGUI_OBJ) $(TARGET)
 
 run: $(TARGET) 
 	./$(TARGET)
-
 
 .PHONY: all clean

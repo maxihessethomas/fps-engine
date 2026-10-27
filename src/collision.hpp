@@ -7,9 +7,8 @@
     float width;
     float height;
 };
- */
 
-/* class Hitbox {
+class Hitbox {
 public:
     std::vector<Vec3> vertices;
     std::vector<unsigned int> indices;
@@ -22,10 +21,9 @@ public:
 enum HITBOX_TYPE {
     CUBE,
     PLANE
-}; */
+};
 
-/* int AABB(Hitbox a, Hitbox b) {
-    
+bool AABB(Hitcube a, Hitcube b) {
     if (a.position.x - (a.width / 2) >= b.position.x - (b.width / 2) &&
         a.position.x + (a.width / 2) <= b.position.x + (b.width / 2) &&
         a.position.y - (a.height / 2) >= b.position.y - (b.height) &&
@@ -33,7 +31,7 @@ enum HITBOX_TYPE {
         a.position.z - (a.width / 2) >= b.position.z - (b.width / 2) &&
         a.position.z + (a.width / 2) <= b.position.z + (b.width / 2)
     ) {
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
 } */
