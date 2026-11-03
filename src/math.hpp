@@ -11,7 +11,7 @@ struct Vec3 { float x, y, z; };
 
 // MISC //
 float aspect(int width, int height) {
-    return (float)width/ (float)height;
+    return width / height;
 }
 
 float degreesToRadians(float angle) {
@@ -19,8 +19,18 @@ float degreesToRadians(float angle) {
 }
 
 float vec3Length(Vec3 vector) {
-    return (float){
+    return {
         sqrt((vector.x * vector.x) + (vector.y * vector.y) + (vector.z * vector.z))
+    };
+}
+
+float vec3Distance(Vec3 a, Vec3 b) {
+    return {
+        sqrt(
+            (a.x - b.x) * (a.x - b.x) +
+            (a.y - b.y) * (a.y - b.y) +
+            (a.z - b.z) * (a.z - b.z)
+        )
     };
 }
 

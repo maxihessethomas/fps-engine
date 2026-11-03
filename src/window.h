@@ -6,6 +6,11 @@
 
 #include "camera.hpp"
 
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
+
 class Window {
 public: 
 
@@ -13,8 +18,11 @@ public:
     bool chatVisible = false;
     bool gameVisible = false;
     GLFWwindow* window = nullptr;
+    int width, height;
+
 
     bool init(int width, int height, const char* name) {
+
         glfwInit();
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -39,6 +47,8 @@ public:
         gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
         glEnable(GL_DEPTH_TEST);
+
+        glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  
 
         return true;
     }

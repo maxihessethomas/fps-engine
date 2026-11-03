@@ -1,37 +1,21 @@
 #pragma once
 
 #include "math.hpp"
+#include "mesh.hpp"
 
-/* struct Hitcube {
-    Vec3 position;
-    float width;
-    float height;
-};
+#include <iostream>
 
-class Hitbox {
-public:
-    std::vector<Vec3> vertices;
-    std::vector<unsigned int> indices;
-    
-    Hitbox() {
-
-    }
-};
-
-enum HITBOX_TYPE {
-    CUBE,
-    PLANE
-};
-
-bool AABB(Hitcube a, Hitcube b) {
-    if (a.position.x - (a.width / 2) >= b.position.x - (b.width / 2) &&
-        a.position.x + (a.width / 2) <= b.position.x + (b.width / 2) &&
-        a.position.y - (a.height / 2) >= b.position.y - (b.height) &&
-        a.position.y <= b.position.y &&
-        a.position.z - (a.width / 2) >= b.position.z - (b.width / 2) &&
-        a.position.z + (a.width / 2) <= b.position.z + (b.width / 2)
-    ) {
-        return true;
+bool AreVerticesCollidiing(const Mesh& a, const Mesh& b) {
+    float distance;
+    for (size_t indexA = 0; indexA < a.vertices.size(); indexA++) {
+        for (size_t indexB = 0; indexB < b.vertices.size(); indexB++) {
+            distance = vec3Distance(a.vertices[indexA].position, b.vertices[indexB].position);
+            if (distance <= 0.1f) {
+                return true;
+            }
+        }
     }
     return false;
-} */
+}
+
+

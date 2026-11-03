@@ -20,8 +20,6 @@ public:
     float velocityY;
     float speed = 1.0f;
 
-/*     Mesh hitbox("assets/pill.obj", "textures/grid.png", NULL, NULL, NULL, NULL); */
-
     void keyInput(GLFWwindow* window, float deltaTime);
     static void mouseCallback(GLFWwindow* window, double xpos, double ypos);
     void mouseInput(double xpos, double ypos, float sensitivity);
@@ -107,14 +105,14 @@ void Camera::keyInput(GLFWwindow* window, float deltaTime) {
         position.z -= speed * right.z * deltaTime;
     }
 
-/*     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
         position.y += speed * deltaTime;
     }
 
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
         position.y -= speed * deltaTime;
         
-    } */
+    }
 }
 
 Mat4 Camera::view(VIEW_TYPE viewtype, VIEW_POSITION viewposition) const {

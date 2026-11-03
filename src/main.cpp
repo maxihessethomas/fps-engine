@@ -20,7 +20,6 @@
 #include "light.hpp"
 #include "skybox.h"
 #include "window.h"
-
 #include "collision.hpp"
 
 const int SCREEN_W = 1800;
@@ -74,19 +73,20 @@ int main() {
     Mesh shotgun("shaders/lighting.vert", "shaders/lighting.frag", "assets/c_shotgun.obj", "textures/c_shotgun.png", light, camera, SCREEN_W, SCREEN_H);
     Mesh level("shaders/lighting.vert", "shaders/lighting.frag", "assets/plane.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
     Mesh cube("shaders/lighting.vert", "shaders/lighting.frag", "assets/cube.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
-  /*   Mesh pill("shaders/lighting.vert", "shaders/lighting.frag", "assets/pill.obj", "textures/grid.png", light, camera, SCREEN_W, SCREEN_H);
- */
+    /* Mesh pill("assets/pill.obj"); */
+
     static float cubeRotationX = 0.0f;
     static float cubeRotationZ = 0.0f;
     Vec3 shotgunOffset = {0.7f, -0.4f, -0.8f};
     Vec3 levelOffset = {0.0f, 0.0f, 0.0f};
 
-    bool shotgundraw = false;
+    bool shotgundraw = true;
     bool sniperdraw = false;
     bool gravity = false;
     bool windowShouldClose = false;
     bool backFaceCulling = false;
     bool wireframeMode = false;
+    bool collision = false;
 
 /*     Vec2 data = {0.0f, 0.0f};
     Vec2* pointer = &data;
@@ -136,22 +136,24 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         skybox.draw(camera, SCREEN_W, SCREEN_H);
-        level.draw(camera, light, SCREEN_W, SCREEN_H, SCENE, mat4Translate(levelOffset));
-/*         pill.draw(camera, light, SCREEN_W, SCREEN_H, SCENE, mat4Identity());
- */        if (backFaceCulling) {
+/*         pill.draw(camera, light, SCREEN_W, SCREEN_H, CAMERA, mat4Identity());
+ */     level.draw(camera, light, SCREEN_W, SCREEN_H, SCENE, mat4Translate(levelOffset));
+/*         if (backFaceCulling) {
             window.enableBackFaceCulling();
             cube.draw(camera, light, SCREEN_W, SCREEN_H, SCENE, mat4Mul(mat4RotateX(cubeRotationX), mat4RotateZ(cubeRotationZ)));
             glEnable(GL_DEPTH_TEST);
-        }
+        } */
         if (shotgundraw) {
             shotgun.draw(camera, light, SCREEN_W, SCREEN_H, CAMERA, mat4Mul(mat4Mul(mat4Translate(shotgunOffset), mat4Scale(0.1f)), mat4RotateY(180.0f)));
         }
         if (camera.position.y - 2 <= -5) {
             camera.velocityY = 0;
             camera.position.y = -5 + 2;
-        } 
+        }
 
-        if (window.debugVisible) {
+        /* collision = AreVerticesCollidiing(level, pill); */
+
+        /* if (window.debugVisible) {
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
@@ -187,14 +189,14 @@ int main() {
             ImGui::Checkbox("Gravity", &gravity);
     /*         ImGui::SliderFloat("Light X", &light.position.x, -10.0f, 10.0f, "%.1f", ImGuiSliderFlags_NoInput);
             ImGui::SliderFloat("Light Y", &light.position.y, -10.0f, 10.0f, "%.1f", ImGuiSliderFlags_NoInput);
-            ImGui::SliderFloat("Light Z", &light.position.z, -10.0f, 10.0f, "%.1f", ImGuiSliderFlags_NoInput); */
+            ImGui::SliderFloat("Light Z", &light.position.z, -10.0f, 10.0f, "%.1f", ImGuiSliderFlags_NoInput);
             ImGui::End(); 
 
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         }
 
-/*         glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, depthFBO);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
         glDrawBuffer(GL_NONE);
         glReadBuffer(GL_NONE);

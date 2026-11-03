@@ -10,11 +10,11 @@
 #include "texture.hpp"
 #include "camera.hpp"
 #include "light.hpp"
-#include "collision.hpp"
 
 class Mesh {
 public:
     GLenum drawMode;
+    std::vector<Vertex> vertices;
 
     Mesh(
         const char* vertexShaderPath, const char* fragmentShaderPath,
@@ -24,6 +24,7 @@ public:
         int SCREEN_W, 
         int SCREEN_H
     );
+    Mesh(const char* objFilePath);
 
     void draw(Camera camera, 
         Light light, 
@@ -39,7 +40,6 @@ private:
     VBO VBO;
     EBO EBO;
     int indexCount;
-    std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     std::string vertexShaderSource, fragmentShaderSource;
     size_t vertex_count;
@@ -62,6 +62,28 @@ Mesh::Mesh(const char* vertexShaderPath,
 
     readOBJ(objFilePath, vertices, indices);
     texture.init(textureFilePath);
+
+    indexCount = indices.size();
+
+    VAO.bind();
+    
+    VBO.bind();
+    VBO.init(vertices, vertices.size() * sizeof(Vertex));
+
+    EBO.bind();
+    EBO.init(indices, indices.size() * sizeof(unsigned int));
+
+    VAO.setAttribute(0, 3, sizeof(Vertex), 0, GL_FLOAT);
+    VAO.setAttribute(1, 2, sizeof(Vertex), sizeof(Vec3), GL_FLOAT);
+    VAO.setAttribute(2, 3, sizeof(Vertex), sizeof(Vec3) + sizeof(Vec2), GL_FLOAT);
+
+    VAO.unbind();
+    VBO.unbind();
+    EBO.unbind();
+}
+
+Mesh::Mesh(const char* objFilePath) {
+    readOBJ(objFilePath, vertices, indices);
 
     indexCount = indices.size();
 

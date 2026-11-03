@@ -1,9 +1,4 @@
-#include <stdio.h>
-
-#include "glad.h"
-#include "GLFW/glfw3.h"
-
-#include "window.h"
+/* 
 
 class Window {
 public: 
@@ -59,4 +54,4 @@ public:
         glfwTerminate();
         printf("terminated");
     }
-};
+}; */
