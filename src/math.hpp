@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cmath>
+#include <PrecompiledHeaders.h>
 
 struct Vec2 { float x, y; };
 struct intVec2 { int x, y; };

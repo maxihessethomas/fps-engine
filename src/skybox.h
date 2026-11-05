@@ -1,15 +1,13 @@
 #pragma once
 
-#include "include/PrecompiledHeaders.h"
+#include <PrecompiledHeaders.h>
 
 #include "buffer.hpp"
 #include "math.hpp"
 #include "import.hpp"
 #include "shader.hpp"
-#include "vertex.h"
 #include "texture.hpp"
 #include "camera.hpp"
-#include "light.hpp"
 
 class Skybox {
 public: 

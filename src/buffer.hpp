@@ -1,9 +1,7 @@
 #pragma once
 
-#include "include/PrecompiledHeaders.h"
+#include <PrecompiledHeaders.h>
 
-#include "GLFW/glfw3.h"
-#include "glad.h"
 #include "vertex.h"
 
 class VBO {

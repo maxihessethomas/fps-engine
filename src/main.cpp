@@ -1,14 +1,14 @@
-#include "include/PrecompiledHeaders.h"
+#include <PrecompiledHeaders.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 
-#include "../lib/stb/stb_image.h"
+#include <stb_image.h>
 
-#include "glad.h"
-#include "GLFW/glfw3.h"
-#include "imgui.h"
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_opengl3.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+/* #include "imgui.h" */
+/* #include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h" */
 
 #include "import.hpp"
 #include "mesh.hpp"
@@ -22,11 +22,11 @@
 #include "window.h"
 #include "collision.hpp"
 
-const int SCREEN_W = 1800;
-const int SCREEN_H = 1000;
 const float SENSITIVITY = 0.002f;
 const float GRAVITY = 9.81f;
 bool WIREFRAME = false;
+const int SCREEN_W = 800;
+const int SCREEN_H = 600;
 
 int main() {
     Window window;
@@ -44,11 +44,11 @@ int main() {
     
     window.setInputMode(GLFW_CURSOR_NORMAL, camera);
 
-    IMGUI_CHECKVERSION();
+/*     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::StyleColorsDark();
     ImGui_ImplGlfw_InitForOpenGL(window.window, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
+    ImGui_ImplOpenGL3_Init("#version 330"); */
   
     const char* skyboxPath[] = {
         "textures/skybox/right.jpg",
@@ -92,7 +92,7 @@ int main() {
     Vec2* pointer = &data;
     printf("%f", sizeof(pointer)); */
 
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration;
+/*     ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration; */
 
 /*     unsigned int depthFBO;
     glGenFramebuffers(1, &depthFBO);
@@ -208,9 +208,9 @@ int main() {
         window.update();
     }
 
-    ImGui_ImplOpenGL3_Shutdown();
+/*     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    ImGui::DestroyContext(); */
     window.destroy();
     return 0;
 }

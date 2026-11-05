@@ -1,10 +1,10 @@
 #pragma once
 
-#include "include/PrecompiledHeaders.h"
+#include <PrecompiledHeaders.h>
 
 class Shader {
 public: 
-    unsigned int vertexShader, fragmentShader, shaderProgram;
+    unsigned int vertexShader, fragmentShader, computeShader, shaderProgram;
 
     void createShader(unsigned int& shader, const char* shaderSource, GLenum type) {
         shader = glCreateShader(type);
@@ -19,10 +19,11 @@ public:
         }
     }
 
-    void createProgram(unsigned int& program, unsigned int shader[2]) {
+    void createProgram(unsigned int& program, std::vector<unsigned int> shader) {
         program = glCreateProgram();
-        glAttachShader(program, shader[0]);
-        glAttachShader(program, shader[1]);
+        for (int i = 0; i < shader.size(); i++) {
+            glAttachShader(program, shader[i]);
+        }
         glLinkProgram(program);
         int success;
         char infoLog[512];
@@ -35,13 +36,25 @@ public:
 
     Shader() {}
 
-    void init(const char* vertexShaderSource, const char* fragmentShaderSource) {
+    void init(const char* vertexShaderSource, const char* fragmentShaderSource, const char* computeShaderSource) {
         createShader(vertexShader, vertexShaderSource, GL_VERTEX_SHADER);
         createShader(fragmentShader, fragmentShaderSource, GL_FRAGMENT_SHADER);
-        unsigned int shaders[2] = {vertexShader, fragmentShader};
+        createShader(computeShader, computeShaderSource, GL_COMPUTE_SHADER);
+        std::vector<unsigned int> shaders{vertexShader, fragmentShader, computeShader};
         createProgram(shaderProgram, shaders);
         glDeleteShader(vertexShader);
         glDeleteShader(fragmentShader);
+        glDeleteShader(computeShader);
+    }
+    
+    void init(const char* vertexShaderSource, const char* fragmentShaderSource) {
+        createShader(vertexShader, vertexShaderSource, GL_VERTEX_SHADER);
+        createShader(fragmentShader, fragmentShaderSource, GL_FRAGMENT_SHADER);
+        std::vector<unsigned int> shaders{vertexShader, fragmentShader};
+        createProgram(shaderProgram, shaders);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        glDeleteShader(computeShader);
     }
 
     void use() const { glUseProgram(shaderProgram); }

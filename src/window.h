@@ -1,15 +1,9 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include "glad.h"
-#include "GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 
 #include "camera.hpp"
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
 
 class Window {
 public: 
@@ -18,14 +12,12 @@ public:
     bool chatVisible = false;
     bool gameVisible = false;
     GLFWwindow* window = nullptr;
-    int width, height;
-
 
     bool init(int width, int height, const char* name) {
 
         glfwInit();
 
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -46,9 +38,10 @@ public:
 
         gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
-        glEnable(GL_DEPTH_TEST);
+        glfwGetFramebufferSize(window, &width, &height);
+        glViewport(0, 0, width, height);
 
-        glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  
+        glEnable(GL_DEPTH_TEST);
 
         return true;
     }
