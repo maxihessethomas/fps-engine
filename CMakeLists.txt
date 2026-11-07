@@ -14,6 +14,7 @@ add_executable(fps
 
 target_include_directories(fps PRIVATE
     /usr/local/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_link_libraries(fps PRIVATE

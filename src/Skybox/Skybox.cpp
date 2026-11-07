@@ -1,0 +1,90 @@
+#include "Skybox/Skybox.h"
+
+EngineLN::Skybox::Skybox(const char* vertexShaderPath,
+    const char* fragmentShaderPath,
+    const char* textureFilePaths[6]
+) {
+    vertexShaderSource = readShader(vertexShaderPath);
+    fragmentShaderSource = readShader(fragmentShaderPath);
+    shader.init(vertexShaderSource.c_str(), fragmentShaderSource.c_str());
+    
+    skybox.bind();
+    skybox.init(textureFilePaths);
+
+    vertices = {
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f
+    };
+
+    VAO.bind();
+
+    VBO.bind();
+    VBO.init(vertices, vertices.size() * sizeof(float));
+
+    VAO.setAttribute(0, 3, sizeof(Vec3), 0, GL_FLOAT);
+
+    skybox.unbind();
+    VAO.unbind();
+    VBO.unbind();
+}
+
+void EngineLN::Skybox::draw(Camera camera,
+        int SCREEN_W,
+        int SCREEN_H
+) {
+    glDepthFunc(GL_LEQUAL);
+
+    skybox.bind();
+    VAO.bind();
+
+    shader.use();
+    shader.mat4Set("projection", camera.perspective(camera.fov, aspect(SCREEN_W, SCREEN_H), camera.near, camera.far));
+    shader.mat4Set("view", camera.view(ROTATION, SCENE));
+
+    glActiveTexture(GL_TEXTURE0);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    VAO.unbind();
+    skybox.unbind();
+
+    glDepthFunc(GL_LESS);
+}
