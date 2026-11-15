@@ -4,7 +4,7 @@
 
 #include "Math/Math.h"
 
-namespace EngineLN 
+namespace EngineLN
 {
     
     enum VIEW_TYPE {
@@ -20,6 +20,7 @@ namespace EngineLN
 
     class Camera {
     public:
+
         Vec3 position = {0, 0, 0};
         float yaw = 0.0f, pitch = 0.0f, roll = 0.0f, fov = 0.0f, near = 0.0f, far = 0.0f;
         float velocityY;
@@ -38,6 +39,7 @@ namespace EngineLN
         Mat4 perspective(float fov, float aspect, float near, float far) const;
 
         void gravity(const float gravity, const float deltaTime);
+
     };
 
 }

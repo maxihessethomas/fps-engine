@@ -7,13 +7,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "mesh.hpp"
-#include "math.hpp"
-#include "camera.hpp"
-#include "light.hpp"
-#include "skybox.h"
-#include "window.h"
-#include "Player.hpp"
 
 const float SENSITIVITY = 0.002f;
 const float GRAVITY = 9.81f;

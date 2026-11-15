@@ -7,14 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(glfw3 3.3 REQUIRED)
 
-add_executable(fps 
+add_executable(fps
     src/main.cpp
     /usr/local/lib/glad.c
 )
 
 target_include_directories(fps PRIVATE
     /usr/local/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 target_link_libraries(fps PRIVATE
@@ -22,7 +21,7 @@ target_link_libraries(fps PRIVATE
     "-framework OpenGL"
 )
 
-target_link_options(fps PRIVATE 
+target_link_options(fps PRIVATE
     -fsanitize=address
 )
 

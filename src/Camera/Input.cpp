@@ -1,6 +1,6 @@
 #include "Camera/Camera.h"
 
-void Camera::keyInput(GLFWwindow* window, float deltaTime) {
+void EngineLN::Camera::keyInput(GLFWwindow* window, float deltaTime) {
     Vec3 forward = getForward();
     Vec3 right = getRight();
 
@@ -37,7 +37,7 @@ void Camera::keyInput(GLFWwindow* window, float deltaTime) {
     }
 }
 
-void Camera::mouseInput(double xpos, double ypos, float sensitivity) {
+void EngineLN::Camera::mouseInput(double xpos, double ypos, float sensitivity) {
     static bool firstMouse;
     static float lastX;
     static float lastY;
@@ -62,7 +62,7 @@ void Camera::mouseInput(double xpos, double ypos, float sensitivity) {
     if (pitch < degreesToRadians(-89)) pitch = degreesToRadians(-89);
 }
 
-void Camera::mouseCallback(GLFWwindow* window, double xpos, double ypos) {
+void EngineLN::Camera::mouseCallback(GLFWwindow* window, double xpos, double ypos) {
     Camera* camera = static_cast<Camera*>(glfwGetWindowUserPointer(window));
     if (camera) {
         camera->mouseInput(xpos, ypos, 0.002);

@@ -1,6 +1,6 @@
 #include "Camera/Camera.h"
 
-Mat4 Camera::view(VIEW_TYPE viewtype, VIEW_POSITION viewposition) const {
+EngineLN::Mat4 EngineLN::Camera::view(VIEW_TYPE viewtype, VIEW_POSITION viewposition) const {
     Vec3 forward = getForward();
     Vec3 right = getRight();
     Vec3 up = getUp();
@@ -51,7 +51,7 @@ Mat4 Camera::view(VIEW_TYPE viewtype, VIEW_POSITION viewposition) const {
     }
 }
 
-Mat4 Camera::perspective(float fov, float aspect, float near, float far) const {
+EngineLN::Mat4 EngineLN::Camera::perspective(float fov, float aspect, float near, float far) const {
     Mat4 result = {0};
 
     float f = 1.0f / tanf(fov / 2.0f);

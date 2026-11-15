@@ -1,6 +1,6 @@
 #include "Camera/Camera.h"
 
-Vec3 Camera::getForward() const {
+EngineLN::Vec3 EngineLN::Camera::getForward() const {
     return {
         cosf(pitch) * sinf(yaw),
         sinf(pitch),
@@ -8,7 +8,7 @@ Vec3 Camera::getForward() const {
     };
 }
 
-Vec3 Camera::getRight() const {
+EngineLN::Vec3 EngineLN::Camera::getRight() const {
     return {
         cosf(yaw),
         0.0f,
@@ -16,7 +16,7 @@ Vec3 Camera::getRight() const {
     };
 }
 
-Vec3 Camera::getUp() const {
+EngineLN::Vec3 EngineLN::Camera::getUp() const {
     return vec3Normalize(vec3Cross(getRight(), getForward()));
 }
 
