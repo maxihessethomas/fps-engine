@@ -6,43 +6,43 @@
 
 #include "Vertex/Vertex.h"
 
-namespace EngineLN 
+namespace EngineLN
 {
 
     class VBO {
-    public:
+        public:
 
-    VBO();
+        VBO();
 
-    void bind() const;
-    void unbind() const;
+        void bind() const;
+        void unbind() const;
 
-    void init(const std::vector<Vertex> data, size_t size);
-    void init(const std::vector<float> data, size_t size);
+        void init(const std::vector<Vertex> data, size_t size);
+        void init(const std::vector<float> data, size_t size);
 
-    ~VBO();
+        ~VBO();
 
-    private:
+        private:
 
-    unsigned int id;
+        unsigned int id;
 
     };
 
     class VAO {
-    public:
+        public:
 
-    VAO();
+        VAO();
 
-    void bind() const;
-    void unbind() const;
+        void bind() const;
+        void unbind() const;
 
-    void setAttribute(unsigned int index, int quant, size_t size, size_t offset, GLenum type);
+        void setAttribute(unsigned int index, int quant, size_t size, size_t offset, GLenum type);
 
-    ~VAO();
+        ~VAO();
 
-    public:
+        public:
 
-    unsigned int id;
+        unsigned int id;
 
     };
 
@@ -66,5 +66,3 @@ namespace EngineLN
     };
 
 }
-
-

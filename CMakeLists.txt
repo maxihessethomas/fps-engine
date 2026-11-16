@@ -8,12 +8,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(glfw3 3.3 REQUIRED)
 
 add_executable(fps
-    src/main.cpp
+    main.cpp
+    EngineLN.cpp
     /usr/local/lib/glad.c
-)
-
-target_include_directories(fps PRIVATE
-    /usr/local/include
 )
 
 target_link_libraries(fps PRIVATE

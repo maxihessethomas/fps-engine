@@ -1,7 +1,7 @@
 #include "Shader/Shader.h"
 
 class Shader {
-public: 
+public:
     unsigned int vertexShader, fragmentShader, computeShader, shaderProgram;
 
     void createShader(unsigned int& shader, const char* shaderSource, GLenum type) {
@@ -29,7 +29,7 @@ public:
         if (!success) {
             glGetProgramInfoLog(program, 512, NULL, infoLog);
             std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-        } 
+        }
     }
 
     Shader() {}
@@ -44,7 +44,7 @@ public:
         glDeleteShader(fragmentShader);
         glDeleteShader(computeShader);
     }
-    
+
     void init(const char* vertexShaderSource, const char* fragmentShaderSource) {
         createShader(vertexShader, vertexShaderSource, GL_VERTEX_SHADER);
         createShader(fragmentShader, fragmentShaderSource, GL_FRAGMENT_SHADER);

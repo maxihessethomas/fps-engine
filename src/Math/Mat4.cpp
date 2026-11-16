@@ -64,7 +64,7 @@ EngineLN::Mat4 EngineLN::mat4Mul(Mat4 a, Mat4 b) {
     Mat4 result = {0};
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
-            result.matrix[i][j] = 
+            result.matrix[i][j] =
                 a.matrix[i][0] * b.matrix[0][j] +
                 a.matrix[i][1] * b.matrix[1][j] +
                 a.matrix[i][2] * b.matrix[2][j] +
