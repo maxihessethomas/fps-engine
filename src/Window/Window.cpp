@@ -1,4 +1,5 @@
 #include "Window/Window.h"
+#include "GLFW/glfw3.h"
 
 void EngineLN::Window::framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
@@ -46,7 +47,7 @@ void EngineLN::Window::keyInput() {
 void EngineLN::Window::enableBackFaceCulling() {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_FRONT);
-    glFrontFace(GL_CW);  
+    glFrontFace(GL_CW);
 }
 
 void EngineLN::Window::updateInputMode() {
@@ -69,6 +70,7 @@ void EngineLN::Window::updateInputMode() {
 
 void EngineLN::Window::setInputMode(GLenum inputMode, Camera& camera) {
     glfwSetWindowUserPointer(window, &camera);
+
     glfwSetInputMode(window, GLFW_CURSOR, inputMode);
 }
 

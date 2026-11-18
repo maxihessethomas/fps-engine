@@ -13,6 +13,10 @@ add_executable(fps
     /usr/local/lib/glad.c
 )
 
+target_include_directories(fps PRIVATE
+    /urs/local/include/assimp/include
+)
+
 target_link_libraries(fps PRIVATE
     glfw
     "-framework OpenGL"

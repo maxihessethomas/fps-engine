@@ -33,7 +33,6 @@ void EngineLN::Camera::keyInput(GLFWwindow* window, float deltaTime) {
 
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
         position.y -= speed * deltaTime;
-        
     }
 }
 

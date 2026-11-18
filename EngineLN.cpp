@@ -1,3 +1,4 @@
+#include "glm/ext/matrix_transform.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "EngineLN.h"
@@ -13,7 +14,7 @@ bool EngineLN::App::init()
     if (!glfwInit())
     {
         printf("INFO: glfwInit() failed");
-        return true;
+        return false;
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -40,20 +41,48 @@ bool EngineLN::App::init()
 
     glfwSwapInterval(0);
 
-    vertexShaderSource = readShader("shaders/lighting.vert");
-    fragmentShaderSource = readShader("shaders/lighting.frag");
-    shader.init(vertexShaderSource.c_str(), fragmentShaderSource.c_str());
+    glEnable(GL_DEPTH_TEST);
+
+    sceneVertexShader = readShader("shaders/lighting.vert");
+    sceneFragmentShader = readShader("shaders/lighting.frag");
+    sceneShader.init(sceneVertexShader.c_str(), sceneFragmentShader.c_str());
+    sceneShader.type = EngineLN::Shader::ShaderType::SCENE_SHADER;
+
+    skyboxVertexShader = readShader("shaders/skybox.vert");
+    skyboxFragmentShader = readShader("shaders/skybox.frag");
+    skyboxShader.init(skyboxVertexShader.c_str(), skyboxFragmentShader.c_str());
+    skyboxShader.type = EngineLN::Shader::ShaderType::SKYBOX_SHADER;
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    if (glfwRawMouseMotionSupported())
+        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+
+    glfwSetWindowUserPointer(window, this);
+    glfwSetCursorPosCallback(window, mouseCallback);
+
+    Object plane("assets/plane.obj", glm::vec4(1.0, 0.451, 0.0, 1.0));
+
+    objects.push_back(plane);
+
+    skybox.init();
 
     return true;
 }
 
 void EngineLN::App::run()
 {
+    beginDrawing(sceneShader, camera, objects);
+    beginDrawing(skyboxShader, camera, skybox);
+
     while (!glfwWindowShouldClose(window))
     {
-        glClearColor(1.0, 1.0, 1.0, 1.0);
+        glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        draw(sceneShader, camera, objects);
+        draw(skyboxShader, camera, skybox);
+
+        keyInput(window, camera, 0.01f);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -65,10 +94,13 @@ void EngineLN::App::shutdown()
     glfwTerminate();
 }
 
-EngineLN::Mesh::Mesh(const char* objFilePath)
+void EngineLN::Mesh::init(const char* objFilePath)
 {
     readOBJ(objFilePath, vertices, indices);
+}
 
+void EngineLN::Mesh::sendToGPU()
+{
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
@@ -92,6 +124,68 @@ EngineLN::Mesh::Mesh(const char* objFilePath)
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+void EngineLN::Skybox::init() {
+    vertices = {
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
+
+        -1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f, -1.0f,
+        1.0f,  1.0f,  1.0f,
+        1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
+
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f, -1.0f,
+        1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+        1.0f, -1.0f,  1.0f
+    };
+}
+
+void EngineLN::Skybox::sendToGPU()
+{
+    glGenVertexArrays(1, &VertexArrayID);
+    glBindVertexArray(VertexArrayID);
+
+    glGenBuffers(1, &VertexBufferID);
+    glBindBuffer(GL_ARRAY_BUFFER, VertexBufferID);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 glm::vec3 EngineLN::Camera::getForward() const
@@ -119,28 +213,21 @@ glm::vec3 EngineLN::Camera::getUp() const
 
 glm::mat4 EngineLN::Camera::view() const
 {
-    glm::vec3 forward = getForward();
-    glm::vec3 right = getRight();
-    glm::vec3 up = getUp();
-
-    return {
-        right.x, right.y, right.z, 0,
-        up.x, up.y, up.z, 0,
-        -forward.x, -forward.y, -forward.z, 0,
-        0, 0, 0, 1
-    };
+    return glm::lookAt(
+        position,
+        position + getForward(),
+        getUp()
+    );
 }
 
 glm::mat4 EngineLN::Camera::perspective() const
 {
-    float f = 1.0f / tanf(fov / 2.0f);
-
-    return {
-        f / aspect, 0, 0, 0,
-        0, f, 0, 0,
-        0, 0, (far+near) / (near-far), (2.0f*far*near) / (near-far),
-        0, 0, -1.0f, 1,
-    };
+    return glm::perspective(
+        glm::radians(fov),
+        aspect,
+        near,
+        far
+    );
 }
 
 void EngineLN::Shader::createShader(unsigned int& shader, const char* shaderSource, GLenum type)
@@ -148,6 +235,14 @@ void EngineLN::Shader::createShader(unsigned int& shader, const char* shaderSour
     shader = glCreateShader(type);
     glShaderSource(shader, 1, &shaderSource, NULL);
     glCompileShader(shader);
+
+    int success;
+    char infoLog[512];
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+        std::cout << "SHADER COMPILE ERROR:\n" << infoLog << '\n';
+    }
 }
 
 void EngineLN::Shader::createProgram(unsigned int& program, std::vector<unsigned int> shader)
@@ -158,6 +253,15 @@ void EngineLN::Shader::createProgram(unsigned int& program, std::vector<unsigned
         glAttachShader(program, shader[i]);
     }
     glLinkProgram(program);
+
+    glLinkProgram(program);
+    int success;
+    char infoLog[512];
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(program, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
 }
 
 void EngineLN::Shader::init(const char* vertexShaderSource, const char* fragmentShaderSource)
@@ -178,7 +282,13 @@ void EngineLN::Shader::use() const
 void EngineLN::Shader::mat4Set(const char* name, const glm::mat4 matrix) const
 {
     unsigned int location = glGetUniformLocation(shaderProgram, name);
-    glUniformMatrix4fv(location, 1, GL_TRUE, &matrix[0][0]);
+    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
+}
+
+void EngineLN::Shader::vec4Set(const char* name, const glm::vec4 vector) const
+{
+    unsigned int location = glGetUniformLocation(shaderProgram, name);
+    glUniform4f(location, vector.x, vector.y, vector.z, vector.w);
 }
 
 void EngineLN::Shader::vec3Set(const char* name, const glm::vec3 vector) const
@@ -186,6 +296,7 @@ void EngineLN::Shader::vec3Set(const char* name, const glm::vec3 vector) const
     unsigned int location = glGetUniformLocation(shaderProgram, name);
     glUniform3f(location, vector.x, vector.y, vector.z);
 }
+
 
 void EngineLN::Shader::floatSet(const char* name, const float x) const
 {
@@ -199,7 +310,11 @@ void EngineLN::Shader::intSet(const char* name, const int x) const
     glUniform1i(location, x);
 }
 
-EngineLN::Texture::Texture()
+EngineLN::Shader::~Shader() {
+    glDeleteProgram(shaderProgram);
+}
+
+/* EngineLN::Texture::Texture()
 {
     glGenTextures(1, &id);
 }
@@ -235,6 +350,24 @@ void EngineLN::Texture::init(const char* path)
         std::cout << "failed";
     }
     unbind();
+} */
+
+EngineLN::Object::Object(const char* objFilePath, glm::vec4 color) {
+    mesh.init(objFilePath);
+    this->color = color;
+}
+
+void EngineLN::Object::sendToGPU()
+{
+    mesh.sendToGPU();
+}
+
+void EngineLN::Object::draw() {
+    glBindVertexArray(mesh.VertexArrayID);
+
+    glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
+
+    glBindVertexArray(0);
 }
 
 void readOBJ(const char* path,
@@ -301,20 +434,165 @@ std::string readShader(const char* path)
     return buffer.str();
 }
 
-void beginDrawing(const EngineLN::Shader& shader, const EngineLN::Camera& camera)
+void beginDrawing(const EngineLN::Shader& shader,
+    const EngineLN::Camera& camera,
+    std::vector<EngineLN::Object>& objects
+)
+{
+    shader.use();
+
+    // camera stuff
+    shader.mat4Set("perspective", camera.perspective());
+    shader.mat4Set("model", glm::scale(glm::mat4(1.0f), glm::vec3(10, 10, 10)));
+
+    for (auto& object : objects) {
+        // sending an object's vertex data to the GPU
+        object.sendToGPU();
+
+    }
+}
+
+void beginDrawing(const EngineLN::Shader& shader,
+    const EngineLN::Camera& camera,
+    EngineLN::Skybox& skybox
+)
+{
+    shader.use();
+
+    // camera stuff
+    shader.mat4Set("perspective", camera.perspective());
+
+    shader.vec3Set("upperHemisphereColor", {0.45, 0.70, 0.90});
+    shader.vec3Set("lowerHemisphereColor", {0.65, 0.67, 0.68});
+
+    skybox.sendToGPU();
+}
+
+void draw(const EngineLN::Shader& shader,
+    const EngineLN::Camera& camera,
+    std::vector<EngineLN::Object>& objects
+)
+{
+    shader.use();
+
+    // sending the view matrix and camera position to the GPU //
+    shader.mat4Set("view", camera.view());
+    shader.vec3Set("viewPos", camera.position);
+
+    for (auto& object : objects) {
+
+        // sending an objects' color data to the gpu
+        shader.vec4Set("color", object.color);
+
+        object.draw();
+    }
+}
+
+void draw(const EngineLN::Shader& shader,
+    const EngineLN::Camera& camera,
+    EngineLN::Skybox& skybox
+)
+{
+    glDepthFunc(GL_LEQUAL);
+
+    shader.use();
+
+    // sending the view matrix to the GPU //
+    shader.mat4Set("view", camera.view());
+
+    glBindVertexArray(skybox.VertexArrayID);
+
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    glBindVertexArray(0);
+
+    glDepthFunc(GL_LESS);
+}
+
+void keyInput(GLFWwindow* window, EngineLN::Camera &camera, float speed)
+{
+    glm::vec3 forward = camera.getForward();
+    glm::vec3 right = camera.getRight();
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        camera.position.x += speed * forward.x;
+        camera.position.z += speed * forward.z;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        camera.position.x -= speed * forward.x;
+        camera.position.z -= speed * forward.z;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        camera.position.x += speed * right.x;
+        camera.position.z += speed * right.z;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        camera.position.x -= speed * right.x;
+        camera.position.z -= speed * right.z;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        camera.position.y += speed;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+        camera.position.y -= speed;
+    }
+}
+
+void mouseInput(EngineLN::Camera &camera, double xpos, double ypos, float sensitivity)
+{
+    static bool firstMouse = false;
+    static float lastX;
+    static float lastY;
+
+    if (firstMouse) {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+        return;
+    }
+
+    float dx = xpos - lastX;
+    float dy = ypos - lastY;
+
+    lastX = xpos;
+    lastY = ypos;
+
+    camera.yaw += dx * sensitivity;
+    camera.pitch -= dy * sensitivity;
+
+    if (camera.pitch > degreesToRadians(89)) camera.pitch = degreesToRadians(89);
+    if (camera.pitch < degreesToRadians(-89)) camera.pitch = degreesToRadians(-89);
+}
+
+void mouseCallback(GLFWwindow* window, double xpos, double ypos)
+{
+    auto* app = static_cast<EngineLN::App*>(glfwGetWindowUserPointer(window));
+    if (app)
+        mouseInput(app->camera, xpos, ypos, 0.002f);
+}
+
+float degreesToRadians(float angle) { return angle * (M_PI / 180); }
+
+
+/* void beginDrawing(const EngineLN::Shader& shader, const EngineLN::Camera& camera)
 {
     shader.use();
     shader.mat4Set("projection", camera.perspective());
     shader.mat4Set("view", camera.view());
-}
+} */
 
 
-void draw(const EngineLN::Mesh& mesh, const EngineLN::Texture& texture, const EngineLN::Shader shader)
+/* void draw(const EngineLN::Mesh& mesh, const EngineLN::Texture& texture, const EngineLN::Shader shader)
 {
     shader.mat4Set("model", glm::mat4(1.0f));
     glBindTexture(1, &mesh.);
 
-}
+} */
 
 /*     glGenTextures(1, &TextureID);
 glBindTexture(GL_TEXTURE, TextureID);

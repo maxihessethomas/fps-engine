@@ -4,8 +4,10 @@ int main()
 {
     EngineLN::App app;
 
-    app.init();
-    app.run();
+    if (app.init())
+    {
+        app.run();
+    }
     app.shutdown();
 
     return 0;
