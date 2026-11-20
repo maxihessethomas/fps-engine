@@ -1,4 +1,5 @@
 #include "glm/ext/matrix_transform.hpp"
+#include "include/Texture/Texture.h"
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "EngineLN.h"
@@ -48,8 +49,8 @@ bool EngineLN::App::init()
     sceneShader.init(sceneVertexShader.c_str(), sceneFragmentShader.c_str());
     sceneShader.type = EngineLN::Shader::ShaderType::SCENE_SHADER;
 
-    skyboxVertexShader = readShader("shaders/skybox.vert");
-    skyboxFragmentShader = readShader("shaders/skybox.frag");
+    skyboxVertexShader = readShader("shaders/textured_skybox.vert");
+    skyboxFragmentShader = readShader("shaders/textured_skybox.frag");
     skyboxShader.init(skyboxVertexShader.c_str(), skyboxFragmentShader.c_str());
     skyboxShader.type = EngineLN::Shader::ShaderType::SKYBOX_SHADER;
 
@@ -60,9 +61,9 @@ bool EngineLN::App::init()
     glfwSetWindowUserPointer(window, this);
     glfwSetCursorPosCallback(window, mouseCallback);
 
-    Object plane("assets/plane.obj", glm::vec4(1.0, 0.451, 0.0, 1.0));
+/*     Object level("assets/level.obj", glm::vec4(1.0, 0.451, 0.0, 1.0)); */
 
-    objects.push_back(plane);
+/*     objects.push_back(level); */
 
     skybox.init();
 
@@ -71,16 +72,16 @@ bool EngineLN::App::init()
 
 void EngineLN::App::run()
 {
-    beginDrawing(sceneShader, camera, objects);
-    beginDrawing(skyboxShader, camera, skybox);
+    ObjectsBeginDrawing(sceneShader, camera, objects);
+    SkyboxBeginDrawing(skyboxShader, camera, skybox, true);
 
     while (!glfwWindowShouldClose(window))
     {
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        draw(sceneShader, camera, objects);
-        draw(skyboxShader, camera, skybox);
+        ObjectsDraw(sceneShader, camera, objects);
+        SkyboxDraw(skyboxShader, camera, skybox, true);
 
         keyInput(window, camera, 0.01f);
         glfwSwapBuffers(window);
@@ -126,7 +127,8 @@ void EngineLN::Mesh::sendToGPU()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void EngineLN::Skybox::init() {
+void EngineLN::Skybox::init()
+{
     vertices = {
         -1.0f,  1.0f, -1.0f,
         -1.0f, -1.0f, -1.0f,
@@ -172,19 +174,53 @@ void EngineLN::Skybox::init() {
     };
 }
 
-void EngineLN::Skybox::sendToGPU()
+void EngineLN::Skybox::sendToGPU(bool isTextured)
 {
+    // VAO creation and binding
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
+    // VBO creation and binding
     glGenBuffers(1, &VertexBufferID);
     glBindBuffer(GL_ARRAY_BUFFER, VertexBufferID);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
+    // Sending vertex data to GPU via VBO
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+    // Sending attribute pointer to GPU via VAO
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
     glEnableVertexAttribArray(0);
 
+    if (isTextured)
+    {
+        // Texture creation and binding
+        glGenTextures(1, &TextureID);
+        glBindTexture(GL_TEXTURE_2D, TextureID);
+
+        // Sending texture data to GPU via OpenGL Texture
+        glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        for (int i = 0; i < 6; i++) {
+            unsigned char* data = stbi_load(SkyboxFaces[i], &CubeMapWidth, &CubeMapHeight, &CubeMapChannelCount, 0);
+            if (data) {
+                GLenum format = (CubeMapChannelCount == 4) ? GL_RGBA : GL_RGB;
+                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, CubeMapWidth, CubeMapHeight, 0, format, GL_UNSIGNED_BYTE, data);
+                stbi_image_free(data);
+            } else {
+                std::cout << SkyboxFaces[i];
+            }
+        }
+
+        // unbinding OpenGL Texture
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    // unbinding VBO
     glBindVertexArray(0);
+    // unbinding VAO
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -297,7 +333,6 @@ void EngineLN::Shader::vec3Set(const char* name, const glm::vec3 vector) const
     glUniform3f(location, vector.x, vector.y, vector.z);
 }
 
-
 void EngineLN::Shader::floatSet(const char* name, const float x) const
 {
     unsigned int location = glGetUniformLocation(shaderProgram, name);
@@ -322,9 +357,9 @@ EngineLN::Shader::~Shader() {
 void EngineLN::Texture::bind() const
 {
     glBindTexture(GL_TEXTURE_2D, id);
-}
+} */
 
-void EngineLN::Texture::unbind() const
+/* void EngineLN::Texture::unbind() const
 {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -352,7 +387,9 @@ void EngineLN::Texture::init(const char* path)
     unbind();
 } */
 
-EngineLN::Object::Object(const char* objFilePath, glm::vec4 color) {
+EngineLN::Object::Object(const char* objFilePath,
+    glm::vec4 color)
+{
     mesh.init(objFilePath);
     this->color = color;
 }
@@ -434,7 +471,8 @@ std::string readShader(const char* path)
     return buffer.str();
 }
 
-void beginDrawing(const EngineLN::Shader& shader,
+// Draw functions for objects (no texture)
+void ObjectsBeginDrawing(const EngineLN::Shader& shader,
     const EngineLN::Camera& camera,
     std::vector<EngineLN::Object>& objects
 )
@@ -452,23 +490,7 @@ void beginDrawing(const EngineLN::Shader& shader,
     }
 }
 
-void beginDrawing(const EngineLN::Shader& shader,
-    const EngineLN::Camera& camera,
-    EngineLN::Skybox& skybox
-)
-{
-    shader.use();
-
-    // camera stuff
-    shader.mat4Set("perspective", camera.perspective());
-
-    shader.vec3Set("upperHemisphereColor", {0.45, 0.70, 0.90});
-    shader.vec3Set("lowerHemisphereColor", {0.65, 0.67, 0.68});
-
-    skybox.sendToGPU();
-}
-
-void draw(const EngineLN::Shader& shader,
+void ObjectsDraw(const EngineLN::Shader& shader,
     const EngineLN::Camera& camera,
     std::vector<EngineLN::Object>& objects
 )
@@ -488,9 +510,34 @@ void draw(const EngineLN::Shader& shader,
     }
 }
 
-void draw(const EngineLN::Shader& shader,
+// Draw functions for skybox
+void SkyboxBeginDrawing(const EngineLN::Shader& shader,
     const EngineLN::Camera& camera,
-    EngineLN::Skybox& skybox
+    EngineLN::Skybox& skybox,
+    bool isTextured
+)
+{
+    shader.use();
+
+    // camera stuff
+    shader.mat4Set("perspective", camera.perspective());
+
+    if (isTextured)
+    {
+        skybox.sendToGPU(true);
+    } else
+    {
+        shader.vec3Set("upperHemisphereColor", {0.45, 0.70, 0.90});
+        shader.vec3Set("lowerHemisphereColor", {0.65, 0.67, 0.68});
+
+        skybox.sendToGPU(false);
+    }
+}
+
+void SkyboxDraw(const EngineLN::Shader& shader,
+    const EngineLN::Camera& camera,
+    EngineLN::Skybox& skybox,
+    bool isTextured
 )
 {
     glDepthFunc(GL_LEQUAL);
@@ -502,12 +549,18 @@ void draw(const EngineLN::Shader& shader,
 
     glBindVertexArray(skybox.VertexArrayID);
 
+    if (isTextured)
+    {
+        glActiveTexture(GL_TEXTURE0);
+    }
+
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     glBindVertexArray(0);
 
     glDepthFunc(GL_LESS);
 }
+
 
 void keyInput(GLFWwindow* window, EngineLN::Camera &camera, float speed)
 {

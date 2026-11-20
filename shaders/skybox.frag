@@ -13,7 +13,7 @@ void main()
 
     float height = dir.y;
 
-    float interpolationFactor = smoothstep(0.0, 1.0, height);
+    float interpolationFactor = dir.y * 0.5 + 0.5;
 
     vec3 color = mix(lowerHemisphereColor, upperHemisphereColor, interpolationFactor);
 

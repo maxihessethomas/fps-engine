@@ -25,7 +25,7 @@ namespace EngineLN {
     public:
 
         glm::vec3 position = {0, 0, 3};
-        float yaw{}, pitch{}, roll{}, fov = 60, near = 0.1f, far = 1000.0f;
+        float yaw{}, pitch{}, roll{}, fov = 110, near = 0.1f, far = 1000.0f;
         float aspect = 1600.0f / 1200.0f;
 
         glm::vec3 getForward() const;
@@ -102,15 +102,28 @@ namespace EngineLN {
     class Skybox
     {
     public:
-        unsigned int VertexArrayID;
+        unsigned int VertexArrayID, TextureID;
 
         std::vector<float> vertices;
 
+        const char* SkyboxFaces[6] =
+        {
+            "textures/skybox/right.jpg",
+            "textures/skybox/left.jpg",
+            "textures/skybox/top.jpg",
+            "textures/skybox/bottom.jpg",
+            "textures/skybox/front.jpg",
+            "textures/skybox/back.jpg"
+        };
+
         void init();
-        void sendToGPU();
+
+        void sendToGPU(bool);
 
     private:
         unsigned int VertexBufferID, ElementBufferID;
+
+        int CubeMapWidth, CubeMapHeight, CubeMapChannelCount;
     };
 
     class Object {
@@ -133,6 +146,7 @@ namespace EngineLN {
 
         void sendToGPU();
         void draw();
+
 
     };
 
@@ -166,6 +180,7 @@ namespace EngineLN {
         Camera camera;
 
         std::vector<Object> objects;
+/*         std::vector<Texture> textures; */
         Skybox skybox;
 
         std::string name = "EngineLN";
@@ -197,28 +212,32 @@ readOBJ(const char*,
 std::string
 readShader(const char*);
 
+// Draw functions for objects (no texture)
 void
-beginDrawing(const EngineLN::Shader&,
+ObjectsBeginDrawing(const EngineLN::Shader&,
     const EngineLN::Camera&,
     std::vector<EngineLN::Object>&
 );
 
 void
-beginDrawing(const EngineLN::Shader&,
-    const EngineLN::Camera&,
-    EngineLN::Skybox&
-);
-
-void
-draw(const EngineLN::Shader&,
+ObjectsDraw(const EngineLN::Shader&,
     const EngineLN::Camera&,
     std::vector<EngineLN::Object>&
 );
 
+// Draw functions for skybox
 void
-draw(const EngineLN::Shader&,
+SkyboxBeginDrawing(const EngineLN::Shader&,
     const EngineLN::Camera&,
-    EngineLN::Skybox&
+    EngineLN::Skybox&,
+    bool
+);
+
+void
+SkyboxDraw(const EngineLN::Shader&,
+    const EngineLN::Camera&,
+    EngineLN::Skybox&,
+    bool
 );
 
 void
