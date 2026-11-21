@@ -1,14 +1,8 @@
-#include "glm/ext/matrix_transform.hpp"
-#include "include/Texture/Texture.h"
+#include <_time.h>
+#include <chrono>
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "EngineLN.h"
-
-#include <iostream>
-#include <sstream>
-#include <fstream>
-
-#include <glm/glm.hpp>
 
 bool EngineLN::App::init()
 {
@@ -40,6 +34,12 @@ bool EngineLN::App::init()
         return false;
     }
 
+    if (enet_initialize() != 0)
+    {
+        printf("INFO: ENet initialisation failed");
+        return false;
+    }
+
     glfwSwapInterval(0);
 
     glEnable(GL_DEPTH_TEST);
@@ -47,12 +47,10 @@ bool EngineLN::App::init()
     sceneVertexShader = readShader("shaders/lighting.vert");
     sceneFragmentShader = readShader("shaders/lighting.frag");
     sceneShader.init(sceneVertexShader.c_str(), sceneFragmentShader.c_str());
-    sceneShader.type = EngineLN::Shader::ShaderType::SCENE_SHADER;
 
     skyboxVertexShader = readShader("shaders/textured_skybox.vert");
     skyboxFragmentShader = readShader("shaders/textured_skybox.frag");
     skyboxShader.init(skyboxVertexShader.c_str(), skyboxFragmentShader.c_str());
-    skyboxShader.type = EngineLN::Shader::ShaderType::SKYBOX_SHADER;
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     if (glfwRawMouseMotionSupported())
@@ -61,18 +59,17 @@ bool EngineLN::App::init()
     glfwSetWindowUserPointer(window, this);
     glfwSetCursorPosCallback(window, mouseCallback);
 
-/*     Object level("assets/level.obj", glm::vec4(1.0, 0.451, 0.0, 1.0)); */
+    meshes.emplace_back();
+    meshes.back().init("assets/sponza.obj", "textures/stone_brick.png", true);
 
-/*     objects.push_back(level); */
-
-    skybox.init();
+    skybox.init(true);
 
     return true;
 }
 
 void EngineLN::App::run()
 {
-    ObjectsBeginDrawing(sceneShader, camera, objects);
+    MeshesBeginDrawing(sceneShader, camera, meshes, true);
     SkyboxBeginDrawing(skyboxShader, camera, skybox, true);
 
     while (!glfwWindowShouldClose(window))
@@ -80,10 +77,13 @@ void EngineLN::App::run()
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        ObjectsDraw(sceneShader, camera, objects);
+        MeshesDraw(sceneShader, camera, meshes, true);
         SkyboxDraw(skyboxShader, camera, skybox, true);
 
         keyInput(window, camera, 0.01f);
+
+        network.update(camera.position);
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -91,43 +91,125 @@ void EngineLN::App::run()
 
 void EngineLN::App::shutdown()
 {
+    network.shutdown();
+
+    enet_deinitialize();
+
     glfwDestroyWindow(window);
     glfwTerminate();
 }
 
-void EngineLN::Mesh::init(const char* objFilePath)
+bool EngineLN::App::startServer()
+{
+    return network.initServer();
+}
+
+bool EngineLN::App::joinServer(const char* ip)
+{
+    return network.initClient(ip);
+}
+
+void EngineLN::Mesh::init(const char* objFilePath,
+    const char* textureFilePath,
+    bool isTextured)
 {
     readOBJ(objFilePath, vertices, indices);
+
+    if (isTextured)
+    {
+        glGenTextures(1, &TextureID);
+    }
+
+    this->isTextured = isTextured;
+    this->textureFilePath = textureFilePath;
 }
 
 void EngineLN::Mesh::sendToGPU()
 {
+    // VAO creation and binding
     glGenVertexArrays(1, &VertexArrayID);
     glBindVertexArray(VertexArrayID);
 
+    // VBO creation and binding
     glGenBuffers(1, &VertexBufferID);
     glBindBuffer(GL_ARRAY_BUFFER, VertexBufferID);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
+    // EBO creation and binding
     glGenBuffers(1, &ElementBufferID);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ElementBufferID);
+
+    // sending vertex data to GPU via VBO
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+    // sending attribute pointer to GPU via VAO
+    // This attribute accounts for the first three values which are the x, y and z values of a vertex (3D coords)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
+    // layout = 0
+    glEnableVertexAttribArray(0);
+    // This attribute accounts for the third and fourth values which are u and v values of a vertex (2D texture coords)
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)sizeof(glm::vec3));
+    // layout = 1
+    glEnableVertexAttribArray(1);
+    // This attribute accounts for the fifth, sixth and seventh values which are crossed x, y and z values of a vertex (3D normal vectors)
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(glm::vec3) + sizeof(glm::vec2)));
+    // layout = 2
+    glEnableVertexAttribArray(2);
+    // sending index data to the GPU via EBO
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), 0);
-    glEnableVertexAttribArray(0);
+    if (isTextured)
+    {
+        // OpenGL Texture creation and binding
+        glBindTexture(GL_TEXTURE_2D, TextureID);
 
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)sizeof(glm::vec3));
-    glEnableVertexAttribArray(1);
+        // Sending texture data to GPU via OpenGL Texture
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(glm::vec3) + sizeof(glm::vec2)));
-    glEnableVertexAttribArray(2);
+        unsigned char* data = stbi_load(textureFilePath, &TextureWidth, &TextureHeight, &TextureChannelCount, 0);
+
+        if (data) {
+            GLenum format = (TextureChannelCount == 4) ? GL_RGBA : GL_RGB;
+            glTexImage2D(GL_TEXTURE_2D, 0, format, TextureWidth, TextureHeight, 0, format, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+            stbi_image_free(data);
+        } else {
+            std::cout << "failed";
+        }
+
+        // unbinding OpenGL Texture
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void EngineLN::Skybox::init()
+void EngineLN::Mesh::draw() {
+    // bind VAO (necessary for glDrawElements)
+    glBindVertexArray(VertexArrayID);
+
+    if (isTextured)
+    {
+        // bind OpenGL Texture (necessary for glDrawElements)
+        glBindTexture(GL_TEXTURE_2D, TextureID);
+    }
+
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+
+    if (isTextured)
+    {
+        // unbind Opengl Texture
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    // unbind VAO
+    glBindVertexArray(0);
+}
+
+void EngineLN::Skybox::init(bool isTextured)
 {
     vertices = {
         -1.0f,  1.0f, -1.0f,
@@ -172,6 +254,11 @@ void EngineLN::Skybox::init()
         -1.0f, -1.0f,  1.0f,
         1.0f, -1.0f,  1.0f
     };
+
+    if (isTextured)
+    {
+        glGenTextures(1, &TextureID);
+    }
 }
 
 void EngineLN::Skybox::sendToGPU(bool isTextured)
@@ -186,14 +273,15 @@ void EngineLN::Skybox::sendToGPU(bool isTextured)
 
     // Sending vertex data to GPU via VBO
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-    // Sending attribute pointer to GPU via VAO
+    // Sending attribute pointer to GPU via VAO.
+    // This attribute accounts for the first three values which are the x, y and z values of a vertex
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+    // layout = 0
     glEnableVertexAttribArray(0);
 
     if (isTextured)
     {
-        // Texture creation and binding
-        glGenTextures(1, &TextureID);
+        // OpenGL Texture binding
         glBindTexture(GL_TEXTURE_2D, TextureID);
 
         // Sending texture data to GPU via OpenGL Texture
@@ -215,7 +303,7 @@ void EngineLN::Skybox::sendToGPU(bool isTextured)
         }
 
         // unbinding OpenGL Texture
-        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     }
 
     // unbinding VBO
@@ -349,62 +437,259 @@ EngineLN::Shader::~Shader() {
     glDeleteProgram(shaderProgram);
 }
 
-/* EngineLN::Texture::Texture()
+void EngineLN::PlayerManager::createPlayer(uint32_t id)
 {
-    glGenTextures(1, &id);
+    players.emplace_back();
+    players.back().id = id;
 }
 
-void EngineLN::Texture::bind() const
+void EngineLN::PlayerManager::removePlayer(uint32_t id)
 {
-    glBindTexture(GL_TEXTURE_2D, id);
-} */
-
-/* void EngineLN::Texture::unbind() const
-{
-    glBindTexture(GL_TEXTURE_2D, 0);
+    players.erase(std::remove_if(players.begin(), players.end(), [id](const Player& player){
+        return player.id == id;
+    }), players.end());
 }
 
-void EngineLN::Texture::init(const char* path)
+EngineLN::Player* EngineLN::PlayerManager::getPlayer(uint32_t id)
 {
-    bind();
+    for (auto& player : players)
+        if (player.id == id)
+            return &player;
 
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    return nullptr;
+}
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+bool EngineLN::Network::initClient(const char* ip)
+{
+    host = enet_host_create(nullptr, 1, 2, 0, 0);
+    if (!host) return false;
 
-    unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 0);
+    ENetAddress address{};
+    enet_address_set_host(&address, ip);
+    address.port = 7777;
 
-    if (data) {
-        GLenum format = (nrChannels == 4) ? GL_RGBA : GL_RGB;
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-        stbi_image_free(data);
-    } else {
-        std::cout << "failed";
+    server = enet_host_connect(host, &address, 2, 0);
+    if (!server) return false;
+
+    isServer = false;
+
+    return server != nullptr;
+}
+
+bool EngineLN::Network::initServer()
+{
+    ENetAddress address{};
+    address.host = ENET_HOST_ANY;
+    address.port = 7777;
+
+    host = enet_host_create(&address, 8, 2, 0, 0);
+    if (!host) return false;
+
+    isServer = true;
+    localID = 1;
+
+    return host != nullptr;
+}
+
+void EngineLN::Network::update(const glm::vec3& localPosition)
+{
+    if (!host) return;
+
+    ENetEvent event;
+
+    while (enet_host_service(host, &event, 0) > 0)
+    {
+        switch (event.type)
+        {
+            case ENET_EVENT_TYPE_CONNECT:
+            {
+                uint32_t id = nextID++;
+                peerIDs[event.peer] = id;
+
+                PlayerPacket connect{};
+                connect.type = PLAYER_CONNECT;
+                connect.id = id;
+
+                ENetPacket* ConnectPacket = enet_packet_create(
+                    &connect,
+                    sizeof(connect),
+                    ENET_PACKET_FLAG_RELIABLE
+                );
+
+                enet_peer_send(event.peer, 0, ConnectPacket);
+
+                for (const auto& [playerID, position] : playerPositions)
+                {
+                    PlayerPacket state{};
+                    state.type = PLAYER_POSITION;
+                    state.id = playerID;
+                    state.x = position.x;
+                    state.y = position.y;
+                    state.z = position.z;
+
+                    ENetPacket* PositionPacket = enet_packet_create(
+                        &state,
+                        sizeof(state),
+                        ENET_PACKET_FLAG_RELIABLE
+                    );
+
+                    enet_peer_send(event.peer, 0, PositionPacket);
+                }
+
+                break;
+            }
+
+            case ENET_EVENT_TYPE_RECEIVE:
+            {
+                if (event.packet->dataLength == sizeof(PlayerPacket))
+                {
+                    PlayerPacket packet{};
+                    memcpy(&packet, event.packet->data, sizeof(packet));
+
+                    if (isServer)
+                    {
+                        auto peer = peerIDs.find(event.peer);
+
+                        if (peer != peerIDs.end() && packet.type == PLAYER_POSITION)
+                        {
+                            packet.id = peer->second;
+
+                            playerPositions[packet.id] = {
+                                packet.x,
+                                packet.y,
+                                packet.z
+                            };
+
+                            ENetPacket* broadcast = enet_packet_create(
+                                &packet,
+                                sizeof(packet),
+                                0
+                            );
+
+                            enet_host_broadcast(host, 1, broadcast);
+                        }
+                    } else
+                    {
+                        if (packet.type == PLAYER_CONNECT)
+                        {
+                            localID = packet.id;
+                        }
+                        else if (packet.type == PLAYER_POSITION)
+                        {
+                            playerPositions[packet.id] = {
+                                packet.x,
+                                packet.y,
+                                packet.z
+                            };
+                        }
+                        else if (packet.type == PLAYER_DISCONNECT)
+                        {
+                            playerPositions.erase(packet.id);
+                        }
+                    }
+                }
+
+                enet_packet_destroy(event.packet);
+
+                break;
+            }
+
+            case ENET_EVENT_TYPE_DISCONNECT:
+            {
+                if (isServer)
+                {
+                    auto peer = peerIDs.find(event.peer);
+
+                    if (peer != peerIDs.end())
+                    {
+                        uint32_t id = peer->second;
+
+                        peerIDs.erase(peer);
+                        playerPositions.erase(id);
+
+                        PlayerPacket DisconnectPacket{};
+                        DisconnectPacket.type = PLAYER_DISCONNECT;
+                        DisconnectPacket.id = id;
+
+                        ENetPacket* packet = enet_packet_create(
+                            &DisconnectPacket,
+                            sizeof(DisconnectPacket),
+                            ENET_PACKET_FLAG_RELIABLE
+                        );
+
+                        enet_host_broadcast(host, 0, packet);
+                    }
+                } else
+                {
+                    server = nullptr;
+                    localID = 0;
+                    playerPositions.clear();
+                }
+
+                break;
+            }
+
+            default:
+                break;
+        }
     }
-    unbind();
-} */
 
-EngineLN::Object::Object(const char* objFilePath,
-    glm::vec4 color)
-{
-    mesh.init(objFilePath);
-    this->color = color;
+    auto now = std::chrono::steady_clock::now();
+
+    if (now - lastSend >= std::chrono::milliseconds(50))
+    {
+        PlayerPacket PositionPacket{};
+        PositionPacket.type = PLAYER_POSITION;
+        PositionPacket.id = localID;
+        PositionPacket.x = localPosition.x;
+        PositionPacket.y = localPosition.y;
+        PositionPacket.z = localPosition.z;
+
+        if (isServer)
+        {
+            ENetPacket* packet = enet_packet_create(
+                &PositionPacket,
+                sizeof(PositionPacket),
+                0
+            );
+
+            enet_host_broadcast(host, 1, packet);
+        } else if (server && localID != 0)
+        {
+            ENetPacket* packet = enet_packet_create(
+                &PositionPacket,
+                sizeof(PositionPacket),
+                0
+            );
+
+            enet_peer_send(server, 1, packet);
+        }
+
+        lastSend = now;
+    }
+
+    enet_host_flush(host);
 }
 
-void EngineLN::Object::sendToGPU()
+void EngineLN::Network::sendPosition(const PlayerPacket& packet)
 {
-    mesh.sendToGPU();
+    if (!host || !server) return;
+
+    ENetPacket* data = enet_packet_create(&packet,
+        sizeof(PlayerPacket),
+        ENET_PACKET_FLAG_UNSEQUENCED
+    );
+
+    enet_peer_send(server, 0, data);
 }
 
-void EngineLN::Object::draw() {
-    glBindVertexArray(mesh.VertexArrayID);
+void EngineLN::Network::shutdown()
+{
+    if (host)
+        enet_host_destroy(host);
 
-    glDrawElements(GL_TRIANGLES, mesh.indices.size(), GL_UNSIGNED_INT, 0);
-
-    glBindVertexArray(0);
+    host = nullptr;
+    server = nullptr;
 }
 
 void readOBJ(const char* path,
@@ -472,27 +757,28 @@ std::string readShader(const char* path)
 }
 
 // Draw functions for objects (no texture)
-void ObjectsBeginDrawing(const EngineLN::Shader& shader,
+void MeshesBeginDrawing(const EngineLN::Shader& shader,
     const EngineLN::Camera& camera,
-    std::vector<EngineLN::Object>& objects
+    std::vector<EngineLN::Mesh>& meshes,
+    bool isTextured
 )
 {
     shader.use();
 
     // camera stuff
     shader.mat4Set("perspective", camera.perspective());
-    shader.mat4Set("model", glm::scale(glm::mat4(1.0f), glm::vec3(10, 10, 10)));
+    shader.mat4Set("model", glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, 0.1f)));
 
-    for (auto& object : objects) {
-        // sending an object's vertex data to the GPU
-        object.sendToGPU();
-
+    for (auto& mesh : meshes) {
+        // sending a mesh's vertex data and texture data (if textured) to the GPU
+        mesh.sendToGPU();
     }
 }
 
-void ObjectsDraw(const EngineLN::Shader& shader,
+void MeshesDraw(const EngineLN::Shader& shader,
     const EngineLN::Camera& camera,
-    std::vector<EngineLN::Object>& objects
+    std::vector<EngineLN::Mesh>& meshes,
+    bool isTextured
 )
 {
     shader.use();
@@ -501,12 +787,9 @@ void ObjectsDraw(const EngineLN::Shader& shader,
     shader.mat4Set("view", camera.view());
     shader.vec3Set("viewPos", camera.position);
 
-    for (auto& object : objects) {
-
-        // sending an objects' color data to the gpu
-        shader.vec4Set("color", object.color);
-
-        object.draw();
+    for (auto& mesh : meshes) {
+        // drawing each mesh
+        mesh.draw();
     }
 }
 
@@ -522,15 +805,12 @@ void SkyboxBeginDrawing(const EngineLN::Shader& shader,
     // camera stuff
     shader.mat4Set("perspective", camera.perspective());
 
-    if (isTextured)
-    {
-        skybox.sendToGPU(true);
-    } else
+    skybox.sendToGPU(isTextured);
+
+    if (!isTextured)
     {
         shader.vec3Set("upperHemisphereColor", {0.45, 0.70, 0.90});
         shader.vec3Set("lowerHemisphereColor", {0.65, 0.67, 0.68});
-
-        skybox.sendToGPU(false);
     }
 }
 
@@ -561,7 +841,6 @@ void SkyboxDraw(const EngineLN::Shader& shader,
     glDepthFunc(GL_LESS);
 }
 
-
 void keyInput(GLFWwindow* window, EngineLN::Camera &camera, float speed)
 {
     glm::vec3 forward = camera.getForward();
@@ -591,9 +870,9 @@ void keyInput(GLFWwindow* window, EngineLN::Camera &camera, float speed)
         camera.position.y += speed;
     }
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+/*     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
         camera.position.y -= speed;
-    }
+    } */
 }
 
 void mouseInput(EngineLN::Camera &camera, double xpos, double ypos, float sensitivity)
@@ -630,42 +909,3 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 }
 
 float degreesToRadians(float angle) { return angle * (M_PI / 180); }
-
-
-/* void beginDrawing(const EngineLN::Shader& shader, const EngineLN::Camera& camera)
-{
-    shader.use();
-    shader.mat4Set("projection", camera.perspective());
-    shader.mat4Set("view", camera.view());
-} */
-
-
-/* void draw(const EngineLN::Mesh& mesh, const EngineLN::Texture& texture, const EngineLN::Shader shader)
-{
-    shader.mat4Set("model", glm::mat4(1.0f));
-    glBindTexture(1, &mesh.);
-
-} */
-
-/*     glGenTextures(1, &TextureID);
-glBindTexture(GL_TEXTURE, TextureID);
-
-glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-unsigned char* data = stbi_load(textureFilePath, &TextureWidth, &TextureHeight, &TextureChannelCount, 0);
-
-if (data) {
-    GLenum format = (TextureChannelCount == 4) ? GL_RGBA : GL_RGB;
-    glTexImage2D(GL_TEXTURE_2D, 0, format, TextureWidth, TextureHeight, 0, format, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    stbi_image_free(data);
-} else {
-    printf("INFO: texture loading failed");
-}
-
-glBindTexture(GL_TEXTURE, 0);
- */

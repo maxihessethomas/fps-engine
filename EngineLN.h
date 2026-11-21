@@ -8,9 +8,22 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <sys/types.h>
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include <chrono>
+#include <cstring>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+extern "C" {
+    #include <enet/enet.h>
+}
+
+float
+degreesToRadians(float);
 
 namespace EngineLN {
 
@@ -21,11 +34,18 @@ namespace EngineLN {
         glm::vec3 normal;
     };
 
+    struct Submesh
+    {
+        unsigned int firstIndex;
+        unsigned int indexCount;
+        unsigned int materialIndex;
+    };
+
     class Camera {
     public:
 
-        glm::vec3 position = {0, 0, 3};
-        float yaw{}, pitch{}, roll{}, fov = 110, near = 0.1f, far = 1000.0f;
+        glm::vec3 position = {0, 10, 0};
+        float yaw{degreesToRadians(90)}, pitch{degreesToRadians(30)}, roll{}, fov = 110, near = 0.1f, far = 1000.0f;
         float aspect = 1600.0f / 1200.0f;
 
         glm::vec3 getForward() const;
@@ -40,13 +60,6 @@ namespace EngineLN {
     class Shader
     {
     public:
-
-        enum class ShaderType {
-            SCENE_SHADER,
-            SKYBOX_SHADER
-        };
-
-        ShaderType type;
 
         unsigned int vertexShader, fragmentShader, shaderProgram;
 
@@ -67,41 +80,39 @@ namespace EngineLN {
 
     };
 
-/*     class Texture
-    {
-    public:
-
-        unsigned int id;
-        int width, height, nrChannels;
-
-        Texture();
-
-        void bind() const;
-        void unbind() const;
-
-        void init(const char*);
-
-    }; */
-
     class Mesh
     {
     public:
-        unsigned int VertexArrayID;
 
-        GLenum drawMode;
+        unsigned int VertexArrayID, TextureID;
+
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
 
-        void init(const char*);
+        bool isTextured;
+
+        const char* textureFilePath;
+
+        // lighting stuff
+        glm::vec3 ambient;
+        glm::vec3 diffuse;
+        glm::vec3 specular;
+        float shininess;
+
+        void init(const char*, const char*, bool);
         void sendToGPU();
+        void draw();
 
     private:
-        unsigned int VertexBufferID, ElementBufferID, TextureID;
+        unsigned int VertexBufferID, ElementBufferID;
+
+        int TextureWidth, TextureHeight, TextureChannelCount;
     };
 
     class Skybox
     {
     public:
+
         unsigned int VertexArrayID, TextureID;
 
         std::vector<float> vertices;
@@ -116,38 +127,13 @@ namespace EngineLN {
             "textures/skybox/back.jpg"
         };
 
-        void init();
-
+        void init(bool);
         void sendToGPU(bool);
 
     private:
         unsigned int VertexBufferID, ElementBufferID;
 
         int CubeMapWidth, CubeMapHeight, CubeMapChannelCount;
-    };
-
-    class Object {
-    public:
-        bool handheld;
-
-        // actual mesh and texture of the object //
-        Mesh mesh;
-        glm::vec4 color;
-
-        Skybox skybox;
-
-        // lighting stuff
-        glm::vec3 ambient;
-        glm::vec3 diffuse;
-        glm::vec3 specular;
-        float shininess;
-
-        Object(const char*, glm::vec4);
-
-        void sendToGPU();
-        void draw();
-
-
     };
 
 /*     struct Item
@@ -172,16 +158,79 @@ namespace EngineLN {
         int activeItem = 0;
     }; */
 
+    class Player
+    {
+    public:
+        uint32_t id;
+
+        glm::vec3 position{0.0f};
+        glm::vec3 rotation{0.0f};
+
+        bool isLocalPlayer = false;
+    };
+
+    class PlayerManager
+    {
+    private:
+        std::vector<Player> players;
+
+        void createPlayer(uint32_t id);
+        void removePlayer(uint32_t id);
+        Player* getPlayer(uint32_t id);
+    };
+
+    enum PacketType : uint8_t
+    {
+        PLAYER_CONNECT = 1,
+        PLAYER_POSITION = 2,
+        PLAYER_DISCONNECT = 3
+    };
+
+    #pragma pack(push, 1)
+    struct PlayerPacket
+    {
+        uint32_t id;
+        PacketType type;
+        float x, y, z, pitch, yaw;
+    };
+    #pragma pack(pop)
+
+    class Network
+    {
+    public:
+        ENetHost* host = nullptr;
+        ENetPeer* server = nullptr;
+
+        bool isServer = false;
+        uint32_t localID = 0;
+        uint32_t nextID = 2;
+
+        std::unordered_map<ENetPeer*, uint32_t> peerIDs;
+        std::unordered_map<uint32_t, glm::vec3> playerPositions;
+        std::chrono::steady_clock::time_point lastSend;
+
+        bool initClient(const char* ip);
+        bool initServer();
+
+        void update(const glm::vec3& localPosition);
+        void sendPosition(const PlayerPacket& packet);
+
+        void shutdown();
+    };
+
     class App
     {
     public:
 
         // needs to be public cuz of mouseCallback //
         Camera camera;
-
-        std::vector<Object> objects;
-/*         std::vector<Texture> textures; */
         Skybox skybox;
+
+        // networking stuff
+        PlayerManager playerManager;
+
+        std::vector<Mesh> meshes;
+/*         std::vector<Texture> textures; */
 
         std::string name = "EngineLN";
         uint32_t width = 1600;
@@ -191,15 +240,19 @@ namespace EngineLN {
         void run();
         void shutdown();
 
+        bool startServer();
+        bool joinServer(const char*);
+
     private:
         GLFWwindow* window;
-
 
         std::string sceneVertexShader, sceneFragmentShader;
         Shader sceneShader;
 
         std::string skyboxVertexShader, skyboxFragmentShader;
         Shader skyboxShader;
+
+        Network network;
     };
 }
 
@@ -214,15 +267,17 @@ readShader(const char*);
 
 // Draw functions for objects (no texture)
 void
-ObjectsBeginDrawing(const EngineLN::Shader&,
+MeshesBeginDrawing(const EngineLN::Shader&,
     const EngineLN::Camera&,
-    std::vector<EngineLN::Object>&
+    std::vector<EngineLN::Mesh>&,
+    bool
 );
 
 void
-ObjectsDraw(const EngineLN::Shader&,
+MeshesDraw(const EngineLN::Shader&,
     const EngineLN::Camera&,
-    std::vector<EngineLN::Object>&
+    std::vector<EngineLN::Mesh>&,
+    bool
 );
 
 // Draw functions for skybox
@@ -246,7 +301,5 @@ keyInput(GLFWwindow*, EngineLN::Camera&, float);
 void
 mouseInput(EngineLN::Camera&, double, double, float);
 
-void mouseCallback(GLFWwindow*, double, double);
-
-float
-degreesToRadians(float);
+void
+mouseCallback(GLFWwindow*, double, double);

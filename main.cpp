@@ -1,13 +1,36 @@
 #include "EngineLN.h"
 
-int main()
+int main(int argc, char* argv[])
 {
     EngineLN::App app;
 
-    if (app.init())
+    if (!app.init()) return 1;
+
+    bool success = false;
+
+    if (argc == 2 && std::strcmp(argv[1], "host") == 0)
     {
-        app.run();
+        success = app.startServer();
+    } else if (argc == 3 && std::strcmp(argv[1], "join") == 0)
+    {
+        success = app.joinServer(argv[2]);
+    } else
+    {
+        std::cout << "Usage:\n";
+        std::cout << "./build/fps host\n";
+        std::cout << "./build/fps join <IP>\n";
+        app.shutdown();
+        return 0;
     }
+
+    if (!success)
+    {
+        std::cout << "INFO: Networking failed";
+        app.shutdown();
+        return 1;
+    }
+
+    app.run();
     app.shutdown();
 
     return 0;

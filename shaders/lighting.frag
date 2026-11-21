@@ -46,11 +46,14 @@ void main() {
 
 #version 410 core
 
-out vec4 FragColor;
+in vec2 TexCoord;
 
-uniform vec4 color;
+uniform sampler2D Texture;
+
+out vec4 FragColor;
 
 void main()
 {
-    FragColor = color;
+    FragColor = texture(Texture, TexCoord);
+    /* FragColor = vec4(1.0, 1.0, 1.0, 1.0); */
 }
