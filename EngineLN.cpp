@@ -1,6 +1,6 @@
-#include "glm/geometric.hpp"
 #include <_time.h>
 #include <chrono>
+#include <cstdint>
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "EngineLN.h"
@@ -60,8 +60,12 @@ bool EngineLN::App::init()
     glfwSetWindowUserPointer(window, this);
     glfwSetCursorPosCallback(window, mouseCallback);
 
-    meshes.emplace_back();
-    meshes.back().init("assets/sponza.obj", "textures/stone_brick.png", true);
+    Mesh SponzaAtrium;
+    SponzaAtrium.init("assets/sponza.obj", "textures/stone_brick.png", true);
+
+    meshes.push_back(SponzaAtrium);
+
+/*     collisionScene.addMesh(SponzaAtrium); */
 
     skybox.init(true);
 
@@ -73,15 +77,22 @@ void EngineLN::App::run()
     MeshesBeginDrawing(sceneShader, player, meshes, true);
     SkyboxBeginDrawing(skyboxShader, player, skybox, true);
 
+    double initTime = glfwGetTime();
+    float deltaTime = 0.0f;
+
     while (!glfwWindowShouldClose(window))
     {
+        double currentTime = glfwGetTime();
+        deltaTime = static_cast<float>(currentTime - initTime);
+        initTime = currentTime;
+
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         MeshesDraw(sceneShader, player, meshes, true);
         SkyboxDraw(skyboxShader, player, skybox, true);
 
-        keyInput(window, player);
+        keyInput(window, player, deltaTime);
 
         network.update(player.position);
 
@@ -108,6 +119,11 @@ bool EngineLN::App::startServer()
 bool EngineLN::App::joinServer(const char* ip)
 {
     return network.initClient(ip);
+}
+
+void EngineLN::Mesh::init(const char* objFilePath)
+{
+    readOBJ(objFilePath, vertices, indices);
 }
 
 void EngineLN::Mesh::init(const char* objFilePath,
@@ -209,6 +225,29 @@ void EngineLN::Mesh::draw() {
     // unbind VAO
     glBindVertexArray(0);
 }
+
+/* glm::vec3 EngineLN::Mesh::getTriangleVertices(uint32_t triangleIndex,
+    uint32_t vertexIndex
+) const
+{
+    uint32_t index = indices[triangleIndex * 3 + vertexIndex];
+
+    return vertices[index].position;
+}
+
+void EngineLN::CollisionScene::addMesh(const Mesh& mesh)
+{
+    for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3)
+    {
+        Triangle triangle;
+
+        triangle.a = mesh.vertices[mesh.indices[i]].position;
+        triangle.b = mesh.vertices[mesh.indices[i + 1]].position;
+        triangle.c = mesh.vertices[mesh.indices[i + 2]].position;
+
+        triangles.push_back(triangle);
+    }
+} */
 
 void EngineLN::Skybox::init(bool isTextured)
 {
@@ -693,7 +732,7 @@ void EngineLN::Network::shutdown()
     server = nullptr;
 }
 
-void EngineLN::Player::update(const glm::vec3& wishDirection)
+void EngineLN::Player::update(const glm::vec3& wishDirection, float deltaTime)
 {
     glm::vec3 direction = {
         wishDirection.x,
@@ -707,46 +746,52 @@ void EngineLN::Player::update(const glm::vec3& wishDirection)
 
     if (isGrounded)
     {
+        applyFriction(deltaTime);
         accelerate(direction,
             groundedMaximumSpeed,
-            groundedAcceleration
+            groundedAcceleration,
+            deltaTime
         );
-        applyFriction();
 
         if (jump)
         {
             velocity.y = jumpSpeed;
             isGrounded = false;
         }
-    } else
-    {
+    } else {
         accelerate(direction,
             groundedMaximumSpeed,
-            groundedAcceleration
+            groundedAcceleration,
+            deltaTime
         );
 
-        velocity.y -= gravity;
+        velocity.y -= gravity * deltaTime;
     }
 
-    camera.position += velocity;
+    position += velocity * deltaTime;
+    camera.position = position;
+
+    jump = false;
 
 }
 
 void EngineLN::Player::accelerate(const glm::vec3& wishDirection,
     float wishSpeed,
-    float acceleration)
+    float acceleration,
+    float deltaTime
+)
 {
     float currentSpeed = glm::dot(velocity, wishDirection);
     float addSpeed = wishSpeed - currentSpeed;
 
-    if (addSpeed <= 0.0f | wishSpeed <= 0.0f)
+    if (addSpeed <= 0.0f || wishSpeed <= 0.0f)
         return;
 
-    float accelerationSpeed = std::min((acceleration * wishSpeed), addSpeed);
+    float accelerationSpeed = std::min((acceleration * deltaTime * wishSpeed), addSpeed);
     velocity += wishDirection * accelerationSpeed;
 }
 
-void EngineLN::Player::applyFriction()
+void EngineLN::Player::applyFriction(float deltaTime)
 {
     glm::vec3 horizontalVelocity(velocity.x,
         0.0f,
@@ -759,7 +804,7 @@ void EngineLN::Player::applyFriction()
         return;
 
     float control = std::max(speed, stopSpeed);
-    float drop = control * groundedFriction;
+    float drop = control * groundedFriction * deltaTime;
     float newSpeed = std::max(0.0f, speed - drop);
 
     horizontalVelocity *= newSpeed / speed;
@@ -917,18 +962,15 @@ void SkyboxDraw(const EngineLN::Shader& shader,
     glDepthFunc(GL_LESS);
 }
 
-void keyInput(GLFWwindow* window, EngineLN::Player& player)
+/* void keyInput(GLFWwindow* window, EngineLN::Player& player, float deltaTime)
 {
     glm::vec3 forward = player.camera.getForward();
     forward.y = 0.0f;
 
-    if (glm::length(forward) > 0.001f)
-        forward = glm::normalize(forward);
-
     glm::vec3 right = player.camera.getRight();
+    right.y = 0.0f;
 
-    if (glm::length(right) > 0.001f)
-        right = glm::normalize(right);
+
 
     glm::vec3 wishDirection(0.0f);
 
@@ -952,7 +994,41 @@ void keyInput(GLFWwindow* window, EngineLN::Player& player)
         player.jump = true;
     }
 
-    player.update(wishDirection);
+    player.update(wishDirection, deltaTime);
+} */
+
+void keyInput(GLFWwindow* window, EngineLN::Player &player, float deltaTime)
+{
+    glm::vec3 forward = player.camera.getForward();
+    glm::vec3 right = player.camera.getRight();
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        player.camera.position.x += deltaTime * forward.x;
+        player.camera.position.z += deltaTime * forward.z;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        player.camera.position.x -= deltaTime * forward.x;
+        player.camera.position.z -= deltaTime * forward.z;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        player.camera.position.x += deltaTime * right.x;
+        player.camera.position.z += deltaTime * right.z;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        player.camera.position.x -= deltaTime * right.x;
+        player.camera.position.z -= deltaTime * right.z;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        player.camera.position.y += deltaTime;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
+        player.camera.position.y -= deltaTime;
+    }
 }
 
 void mouseInput(EngineLN::Camera &camera, double xpos, double ypos, float sensitivity)

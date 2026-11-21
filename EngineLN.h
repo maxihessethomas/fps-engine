@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <vector>
 #include <string>
@@ -92,9 +93,13 @@ namespace EngineLN {
         glm::vec3 specular;
         float shininess;
 
+        void init(const char*);
         void init(const char*, const char*, bool);
         void sendToGPU();
         void draw();
+
+        // collision //
+        glm::vec3 getTriangleVertices(uint32_t, uint32_t) const;
 
     private:
         unsigned int VertexBufferID, ElementBufferID;
@@ -151,6 +156,13 @@ namespace EngineLN {
         int activeItem = 0;
     }; */
 
+/*     struct Capsule
+    {
+        glm::vec3 position;
+        float radius = 0.035f;
+        float height = 1.8f;
+    };
+ */
     class Player
     {
     public:
@@ -161,6 +173,8 @@ namespace EngineLN {
         glm::vec3 position{0.0f};
         glm::vec3 rotation{0.0f};
 
+        float cameraHeight = 1.8f;
+
         bool isLocalPlayer = false;
 
         bool isGrounded = false;
@@ -168,27 +182,28 @@ namespace EngineLN {
 
         glm::vec3 velocity{0.0f};
 
-        float groundedAcceleration = 0.1f;
-        float airAcceleration = 0.02f;
+        float groundedAcceleration = 5.0f;
+        float airAcceleration = 2.0f;
 
-        float groundedFriction = 0.06f;
-        float stopSpeed = 0.02f;
+        float groundedFriction = 6.0f;
+        float stopSpeed = 2.0f;
 
-        float groundedMaximumSpeed = 0.08f;
-        float airMaximumSpeed = 0.08f;
+        float groundedMaximumSpeed = 8.0f;
+        float airMaximumSpeed = 8.0f;
 
-        float jumpSpeed = 0.08f;
-        float gravity = 0.00002f;
+        float jumpSpeed = 8.0f;
+        float gravity = 0.1f;
 
-        void update(const glm::vec3& wishDirection);
+        void update(const glm::vec3& wishDirection, float);
 
     private:
         void accelerate(const glm::vec3& wishDirection,
             float wishSpeed,
-            float acceleration
+            float acceleration,
+            float
         );
 
-        void applyFriction();
+        void applyFriction(float);
     };
 
     class PlayerManager
@@ -252,7 +267,6 @@ namespace EngineLN {
         PlayerManager playerManager;
 
         std::vector<Mesh> meshes;
-/*         std::vector<Texture> textures; */
 
         std::string name = "EngineLN";
         uint32_t width = 1600;
@@ -318,7 +332,7 @@ SkyboxDraw(const EngineLN::Shader&,
 );
 
 void
-keyInput(GLFWwindow*, EngineLN::Player&);
+keyInput(GLFWwindow*, EngineLN::Player&, float);
 
 void
 mouseInput(EngineLN::Camera&, double, double, float);
