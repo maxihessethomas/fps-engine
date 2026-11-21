@@ -1,3 +1,4 @@
+#include "glm/geometric.hpp"
 #include <_time.h>
 #include <chrono>
 #define STB_IMAGE_IMPLEMENTATION
@@ -69,20 +70,20 @@ bool EngineLN::App::init()
 
 void EngineLN::App::run()
 {
-    MeshesBeginDrawing(sceneShader, camera, meshes, true);
-    SkyboxBeginDrawing(skyboxShader, camera, skybox, true);
+    MeshesBeginDrawing(sceneShader, player, meshes, true);
+    SkyboxBeginDrawing(skyboxShader, player, skybox, true);
 
     while (!glfwWindowShouldClose(window))
     {
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        MeshesDraw(sceneShader, camera, meshes, true);
-        SkyboxDraw(skyboxShader, camera, skybox, true);
+        MeshesDraw(sceneShader, player, meshes, true);
+        SkyboxDraw(skyboxShader, player, skybox, true);
 
-        keyInput(window, camera, 0.01f);
+        keyInput(window, player);
 
-        network.update(camera.position);
+        network.update(player.position);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -692,6 +693,81 @@ void EngineLN::Network::shutdown()
     server = nullptr;
 }
 
+void EngineLN::Player::update(const glm::vec3& wishDirection)
+{
+    glm::vec3 direction = {
+        wishDirection.x,
+        0.0f,
+        wishDirection.z
+    };
+
+    float length = glm::length(direction);
+    if (length > 0.001f)
+        direction /= length;
+
+    if (isGrounded)
+    {
+        accelerate(direction,
+            groundedMaximumSpeed,
+            groundedAcceleration
+        );
+        applyFriction();
+
+        if (jump)
+        {
+            velocity.y = jumpSpeed;
+            isGrounded = false;
+        }
+    } else
+    {
+        accelerate(direction,
+            groundedMaximumSpeed,
+            groundedAcceleration
+        );
+
+        velocity.y -= gravity;
+    }
+
+    camera.position += velocity;
+
+}
+
+void EngineLN::Player::accelerate(const glm::vec3& wishDirection,
+    float wishSpeed,
+    float acceleration)
+{
+    float currentSpeed = glm::dot(velocity, wishDirection);
+    float addSpeed = wishSpeed - currentSpeed;
+
+    if (addSpeed <= 0.0f | wishSpeed <= 0.0f)
+        return;
+
+    float accelerationSpeed = std::min((acceleration * wishSpeed), addSpeed);
+    velocity += wishDirection * accelerationSpeed;
+}
+
+void EngineLN::Player::applyFriction()
+{
+    glm::vec3 horizontalVelocity(velocity.x,
+        0.0f,
+        velocity.z
+    );
+
+    float speed = glm::length(horizontalVelocity);
+
+    if (speed < 0.001f)
+        return;
+
+    float control = std::max(speed, stopSpeed);
+    float drop = control * groundedFriction;
+    float newSpeed = std::max(0.0f, speed - drop);
+
+    horizontalVelocity *= newSpeed / speed;
+
+    velocity.x = horizontalVelocity.x;
+    velocity.z = horizontalVelocity.z;
+}
+
 void readOBJ(const char* path,
     std::vector<EngineLN::Vertex>& vertices,
     std::vector<unsigned int>& indices
@@ -758,7 +834,7 @@ std::string readShader(const char* path)
 
 // Draw functions for objects (no texture)
 void MeshesBeginDrawing(const EngineLN::Shader& shader,
-    const EngineLN::Camera& camera,
+    const EngineLN::Player& player,
     std::vector<EngineLN::Mesh>& meshes,
     bool isTextured
 )
@@ -766,7 +842,7 @@ void MeshesBeginDrawing(const EngineLN::Shader& shader,
     shader.use();
 
     // camera stuff
-    shader.mat4Set("perspective", camera.perspective());
+    shader.mat4Set("perspective", player.camera.perspective());
     shader.mat4Set("model", glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, 0.1f)));
 
     for (auto& mesh : meshes) {
@@ -776,7 +852,7 @@ void MeshesBeginDrawing(const EngineLN::Shader& shader,
 }
 
 void MeshesDraw(const EngineLN::Shader& shader,
-    const EngineLN::Camera& camera,
+    const EngineLN::Player& player,
     std::vector<EngineLN::Mesh>& meshes,
     bool isTextured
 )
@@ -784,8 +860,8 @@ void MeshesDraw(const EngineLN::Shader& shader,
     shader.use();
 
     // sending the view matrix and camera position to the GPU //
-    shader.mat4Set("view", camera.view());
-    shader.vec3Set("viewPos", camera.position);
+    shader.mat4Set("view", player.camera.view());
+    shader.vec3Set("viewPos", player.camera.position);
 
     for (auto& mesh : meshes) {
         // drawing each mesh
@@ -795,7 +871,7 @@ void MeshesDraw(const EngineLN::Shader& shader,
 
 // Draw functions for skybox
 void SkyboxBeginDrawing(const EngineLN::Shader& shader,
-    const EngineLN::Camera& camera,
+    const EngineLN::Player& player,
     EngineLN::Skybox& skybox,
     bool isTextured
 )
@@ -803,7 +879,7 @@ void SkyboxBeginDrawing(const EngineLN::Shader& shader,
     shader.use();
 
     // camera stuff
-    shader.mat4Set("perspective", camera.perspective());
+    shader.mat4Set("perspective", player.camera.perspective());
 
     skybox.sendToGPU(isTextured);
 
@@ -815,7 +891,7 @@ void SkyboxBeginDrawing(const EngineLN::Shader& shader,
 }
 
 void SkyboxDraw(const EngineLN::Shader& shader,
-    const EngineLN::Camera& camera,
+    const EngineLN::Player& player,
     EngineLN::Skybox& skybox,
     bool isTextured
 )
@@ -825,7 +901,7 @@ void SkyboxDraw(const EngineLN::Shader& shader,
     shader.use();
 
     // sending the view matrix to the GPU //
-    shader.mat4Set("view", camera.view());
+    shader.mat4Set("view", player.camera.view());
 
     glBindVertexArray(skybox.VertexArrayID);
 
@@ -841,38 +917,42 @@ void SkyboxDraw(const EngineLN::Shader& shader,
     glDepthFunc(GL_LESS);
 }
 
-void keyInput(GLFWwindow* window, EngineLN::Camera &camera, float speed)
+void keyInput(GLFWwindow* window, EngineLN::Player& player)
 {
-    glm::vec3 forward = camera.getForward();
-    glm::vec3 right = camera.getRight();
+    glm::vec3 forward = player.camera.getForward();
+    forward.y = 0.0f;
+
+    if (glm::length(forward) > 0.001f)
+        forward = glm::normalize(forward);
+
+    glm::vec3 right = player.camera.getRight();
+
+    if (glm::length(right) > 0.001f)
+        right = glm::normalize(right);
+
+    glm::vec3 wishDirection(0.0f);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        camera.position.x += speed * forward.x;
-        camera.position.z += speed * forward.z;
+        wishDirection += forward;
     }
 
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        camera.position.x -= speed * forward.x;
-        camera.position.z -= speed * forward.z;
+        wishDirection -= forward;
     }
 
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        camera.position.x += speed * right.x;
-        camera.position.z += speed * right.z;
+        wishDirection += right;
     }
 
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        camera.position.x -= speed * right.x;
-        camera.position.z -= speed * right.z;
+        wishDirection -= right;
     }
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-        camera.position.y += speed;
+        player.jump = true;
     }
 
-/*     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-        camera.position.y -= speed;
-    } */
+    player.update(wishDirection);
 }
 
 void mouseInput(EngineLN::Camera &camera, double xpos, double ypos, float sensitivity)
@@ -905,7 +985,7 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
     auto* app = static_cast<EngineLN::App*>(glfwGetWindowUserPointer(window));
     if (app)
-        mouseInput(app->camera, xpos, ypos, 0.002f);
+        mouseInput(app->player.camera, xpos, ypos, 0.002f);
 }
 
 float degreesToRadians(float angle) { return angle * (M_PI / 180); }

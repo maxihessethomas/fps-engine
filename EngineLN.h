@@ -34,13 +34,6 @@ namespace EngineLN {
         glm::vec3 normal;
     };
 
-    struct Submesh
-    {
-        unsigned int firstIndex;
-        unsigned int indexCount;
-        unsigned int materialIndex;
-    };
-
     class Camera {
     public:
 
@@ -163,10 +156,39 @@ namespace EngineLN {
     public:
         uint32_t id;
 
+        Camera camera;
+
         glm::vec3 position{0.0f};
         glm::vec3 rotation{0.0f};
 
         bool isLocalPlayer = false;
+
+        bool isGrounded = false;
+        bool jump = false;
+
+        glm::vec3 velocity{0.0f};
+
+        float groundedAcceleration = 0.1f;
+        float airAcceleration = 0.02f;
+
+        float groundedFriction = 0.06f;
+        float stopSpeed = 0.02f;
+
+        float groundedMaximumSpeed = 0.08f;
+        float airMaximumSpeed = 0.08f;
+
+        float jumpSpeed = 0.08f;
+        float gravity = 0.00002f;
+
+        void update(const glm::vec3& wishDirection);
+
+    private:
+        void accelerate(const glm::vec3& wishDirection,
+            float wishSpeed,
+            float acceleration
+        );
+
+        void applyFriction();
     };
 
     class PlayerManager
@@ -223,7 +245,7 @@ namespace EngineLN {
     public:
 
         // needs to be public cuz of mouseCallback //
-        Camera camera;
+        Player player;
         Skybox skybox;
 
         // networking stuff
@@ -268,14 +290,14 @@ readShader(const char*);
 // Draw functions for objects (no texture)
 void
 MeshesBeginDrawing(const EngineLN::Shader&,
-    const EngineLN::Camera&,
+    const EngineLN::Player&,
     std::vector<EngineLN::Mesh>&,
     bool
 );
 
 void
 MeshesDraw(const EngineLN::Shader&,
-    const EngineLN::Camera&,
+    const EngineLN::Player&,
     std::vector<EngineLN::Mesh>&,
     bool
 );
@@ -283,20 +305,20 @@ MeshesDraw(const EngineLN::Shader&,
 // Draw functions for skybox
 void
 SkyboxBeginDrawing(const EngineLN::Shader&,
-    const EngineLN::Camera&,
+    const EngineLN::Player&,
     EngineLN::Skybox&,
     bool
 );
 
 void
 SkyboxDraw(const EngineLN::Shader&,
-    const EngineLN::Camera&,
+    const EngineLN::Player&,
     EngineLN::Skybox&,
     bool
 );
 
 void
-keyInput(GLFWwindow*, EngineLN::Camera&, float);
+keyInput(GLFWwindow*, EngineLN::Player&);
 
 void
 mouseInput(EngineLN::Camera&, double, double, float);
