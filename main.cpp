@@ -8,7 +8,7 @@ int main(int argc, char* argv[])
 
     bool success = false;
 
-    if (argc == 2 && std::strcmp(argv[1], "host") == 0)
+/*     if (argc == 2 && std::strcmp(argv[1], "host") == 0)
     {
         success = app.startServer();
     } else if (argc == 3 && std::strcmp(argv[1], "join") == 0)
@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
         std::cout << "INFO: Networking failed";
         app.shutdown();
         return 1;
-    }
+    } */
 
     app.run();
     app.shutdown();

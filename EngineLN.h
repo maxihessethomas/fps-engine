@@ -78,14 +78,13 @@ namespace EngineLN {
     {
     public:
 
-        unsigned int VertexArrayID, TextureID;
+        unsigned int VertexArrayID, DiffuseID{}, SpecularID{};
 
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
 
-        bool isTextured;
-
-        const char* textureFilePath;
+        const char* diffuseFilePath;
+        const char* specularFilePath;
 
         // lighting stuff
         glm::vec3 ambient;
@@ -94,7 +93,8 @@ namespace EngineLN {
         float shininess;
 
         void init(const char*);
-        void init(const char*, const char*, bool);
+        void init(const char*, const char*);
+        void init(const char*, const char*, const char*);
         void sendToGPU();
         void draw();
 
@@ -104,7 +104,8 @@ namespace EngineLN {
     private:
         unsigned int VertexBufferID, ElementBufferID;
 
-        int TextureWidth, TextureHeight, TextureChannelCount;
+        int DiffuseWidth, DiffuseHeight, DiffuseChannelCount;
+        int SpecularWidth, SpecularHeight, SpecularChannelCount;
     };
 
     class Skybox
@@ -125,8 +126,8 @@ namespace EngineLN {
             "textures/skybox/back.jpg"
         };
 
-        void init(bool);
-        void sendToGPU(bool);
+        void init();
+        void sendToGPU();
 
     private:
         unsigned int VertexBufferID, ElementBufferID;
@@ -305,30 +306,26 @@ readShader(const char*);
 void
 MeshesBeginDrawing(const EngineLN::Shader&,
     const EngineLN::Player&,
-    std::vector<EngineLN::Mesh>&,
-    bool
+    std::vector<EngineLN::Mesh>&
 );
 
 void
 MeshesDraw(const EngineLN::Shader&,
     const EngineLN::Player&,
-    std::vector<EngineLN::Mesh>&,
-    bool
+    std::vector<EngineLN::Mesh>&
 );
 
 // Draw functions for skybox
 void
 SkyboxBeginDrawing(const EngineLN::Shader&,
     const EngineLN::Player&,
-    EngineLN::Skybox&,
-    bool
+    EngineLN::Skybox&
 );
 
 void
 SkyboxDraw(const EngineLN::Shader&,
     const EngineLN::Player&,
-    EngineLN::Skybox&,
-    bool
+    EngineLN::Skybox&
 );
 
 void

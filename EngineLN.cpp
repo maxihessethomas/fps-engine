@@ -1,3 +1,4 @@
+#include "glm/ext/matrix_transform.hpp"
 #include <_time.h>
 #include <chrono>
 #include <cstdint>
@@ -44,6 +45,7 @@ bool EngineLN::App::init()
     glfwSwapInterval(0);
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_FRAMEBUFFER_SRGB);
 
     sceneVertexShader = readShader("shaders/lighting.vert");
     sceneFragmentShader = readShader("shaders/lighting.frag");
@@ -61,21 +63,21 @@ bool EngineLN::App::init()
     glfwSetCursorPosCallback(window, mouseCallback);
 
     Mesh SponzaAtrium;
-    SponzaAtrium.init("assets/sponza.obj", "textures/stone_brick.png", true);
+    SponzaAtrium.init("assets/sponza_atlas.obj", "textures/sponza_atlas_diffuse.png", "textures/sponza_lightmap.png");
 
     meshes.push_back(SponzaAtrium);
 
-/*     collisionScene.addMesh(SponzaAtrium); */
+/*   collisionScene.addMesh(SponzaAtrium); */
 
-    skybox.init(true);
+    skybox.init();
 
     return true;
 }
 
 void EngineLN::App::run()
 {
-    MeshesBeginDrawing(sceneShader, player, meshes, true);
-    SkyboxBeginDrawing(skyboxShader, player, skybox, true);
+    MeshesBeginDrawing(sceneShader, player, meshes);
+    SkyboxBeginDrawing(skyboxShader, player, skybox);
 
     double initTime = glfwGetTime();
     float deltaTime = 0.0f;
@@ -89,8 +91,8 @@ void EngineLN::App::run()
         glClearColor(0.0, 0.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        MeshesDraw(sceneShader, player, meshes, true);
-        SkyboxDraw(skyboxShader, player, skybox, true);
+        MeshesDraw(sceneShader, player, meshes);
+        SkyboxDraw(skyboxShader, player, skybox);
 
         keyInput(window, player, deltaTime);
 
@@ -126,7 +128,7 @@ void EngineLN::Mesh::init(const char* objFilePath)
     readOBJ(objFilePath, vertices, indices);
 }
 
-void EngineLN::Mesh::init(const char* objFilePath,
+/* void EngineLN::Mesh::init(const char* objFilePath,
     const char* textureFilePath,
     bool isTextured)
 {
@@ -134,11 +136,36 @@ void EngineLN::Mesh::init(const char* objFilePath,
 
     if (isTextured)
     {
-        glGenTextures(1, &TextureID);
+        glGenTextures(1, &DiffuseID);
     }
 
     this->isTextured = isTextured;
     this->textureFilePath = textureFilePath;
+} */
+
+void EngineLN::Mesh::init(const char* objFilePath,
+    const char* diffuseFilePath
+)
+{
+    readOBJ(objFilePath, vertices, indices);
+
+    glGenTextures(1, &DiffuseID);
+
+    this->diffuseFilePath = diffuseFilePath;
+}
+
+void EngineLN::Mesh::init(const char* objFilePath,
+    const char* diffuseFilePath,
+    const char* specularFilePath
+)
+{
+    readOBJ(objFilePath, vertices, indices);
+
+    glGenTextures(1, &DiffuseID);
+    glGenTextures(1, &SpecularID);
+
+    this->diffuseFilePath = diffuseFilePath;
+    this->specularFilePath = specularFilePath;
 }
 
 void EngineLN::Mesh::sendToGPU()
@@ -173,10 +200,10 @@ void EngineLN::Mesh::sendToGPU()
     // sending index data to the GPU via EBO
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
-    if (isTextured)
+    if (DiffuseID != 0)
     {
         // OpenGL Texture creation and binding
-        glBindTexture(GL_TEXTURE_2D, TextureID);
+        glBindTexture(GL_TEXTURE_2D, DiffuseID);
 
         // Sending texture data to GPU via OpenGL Texture
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -184,11 +211,37 @@ void EngineLN::Mesh::sendToGPU()
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        unsigned char* data = stbi_load(textureFilePath, &TextureWidth, &TextureHeight, &TextureChannelCount, 0);
+        unsigned char* data = stbi_load(diffuseFilePath, &DiffuseWidth, &DiffuseHeight, &DiffuseChannelCount, 0);
 
         if (data) {
-            GLenum format = (TextureChannelCount == 4) ? GL_RGBA : GL_RGB;
-            glTexImage2D(GL_TEXTURE_2D, 0, format, TextureWidth, TextureHeight, 0, format, GL_UNSIGNED_BYTE, data);
+            GLenum format = (DiffuseChannelCount == 4) ? GL_RGBA : GL_RGB;
+            glTexImage2D(GL_TEXTURE_2D, 0, format, DiffuseWidth, DiffuseHeight, 0, format, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+            stbi_image_free(data);
+        } else {
+            std::cout << "failed";
+        }
+
+        // unbinding OpenGL Texture
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    if (SpecularID != 0)
+    {
+        // OpenGL Texture creation and binding
+        glBindTexture(GL_TEXTURE_2D, SpecularID);
+
+        // Sending texture data to GPU via OpenGL Texture
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        unsigned char* data = stbi_load(specularFilePath, &SpecularWidth, &SpecularHeight, &SpecularChannelCount, 0);
+
+        if (data) {
+            GLenum format = (SpecularChannelCount == 4) ? GL_RGBA : GL_RGB;
+            glTexImage2D(GL_TEXTURE_2D, 0, format, SpecularChannelCount, SpecularHeight, 0, format, GL_UNSIGNED_BYTE, data);
             glGenerateMipmap(GL_TEXTURE_2D);
             stbi_image_free(data);
         } else {
@@ -208,15 +261,23 @@ void EngineLN::Mesh::draw() {
     // bind VAO (necessary for glDrawElements)
     glBindVertexArray(VertexArrayID);
 
-    if (isTextured)
+    if (DiffuseID != 0)
     {
         // bind OpenGL Texture (necessary for glDrawElements)
-        glBindTexture(GL_TEXTURE_2D, TextureID);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, DiffuseID);
+    }
+
+    if (SpecularID != 0)
+    {
+        // bind OpenGL Texture (necessary for glDrawElements)
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, SpecularID);
     }
 
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
-    if (isTextured)
+    if (DiffuseID != 0 || SpecularID != 0)
     {
         // unbind Opengl Texture
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -249,7 +310,7 @@ void EngineLN::CollisionScene::addMesh(const Mesh& mesh)
     }
 } */
 
-void EngineLN::Skybox::init(bool isTextured)
+void EngineLN::Skybox::init()
 {
     vertices = {
         -1.0f,  1.0f, -1.0f,
@@ -295,13 +356,10 @@ void EngineLN::Skybox::init(bool isTextured)
         1.0f, -1.0f,  1.0f
     };
 
-    if (isTextured)
-    {
-        glGenTextures(1, &TextureID);
-    }
+    glGenTextures(1, &TextureID);
 }
 
-void EngineLN::Skybox::sendToGPU(bool isTextured)
+void EngineLN::Skybox::sendToGPU()
 {
     // VAO creation and binding
     glGenVertexArrays(1, &VertexArrayID);
@@ -319,32 +377,29 @@ void EngineLN::Skybox::sendToGPU(bool isTextured)
     // layout = 0
     glEnableVertexAttribArray(0);
 
-    if (isTextured)
-    {
-        // OpenGL Texture binding
-        glBindTexture(GL_TEXTURE_2D, TextureID);
+    // OpenGL Texture binding
+    glBindTexture(GL_TEXTURE_2D, TextureID);
 
-        // Sending texture data to GPU via OpenGL Texture
-        glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // Sending texture data to GPU via OpenGL Texture
+    glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        for (int i = 0; i < 6; i++) {
-            unsigned char* data = stbi_load(SkyboxFaces[i], &CubeMapWidth, &CubeMapHeight, &CubeMapChannelCount, 0);
-            if (data) {
-                GLenum format = (CubeMapChannelCount == 4) ? GL_RGBA : GL_RGB;
-                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, CubeMapWidth, CubeMapHeight, 0, format, GL_UNSIGNED_BYTE, data);
-                stbi_image_free(data);
-            } else {
-                std::cout << SkyboxFaces[i];
-            }
+    for (int i = 0; i < 6; i++) {
+        unsigned char* data = stbi_load(SkyboxFaces[i], &CubeMapWidth, &CubeMapHeight, &CubeMapChannelCount, 0);
+        if (data) {
+            GLenum format = (CubeMapChannelCount == 4) ? GL_RGBA : GL_RGB;
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, CubeMapWidth, CubeMapHeight, 0, format, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        } else {
+            std::cout << SkyboxFaces[i];
         }
-
-        // unbinding OpenGL Texture
-        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     }
+
+    // unbinding OpenGL Texture
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
     // unbinding VBO
     glBindVertexArray(0);
@@ -880,8 +935,7 @@ std::string readShader(const char* path)
 // Draw functions for objects (no texture)
 void MeshesBeginDrawing(const EngineLN::Shader& shader,
     const EngineLN::Player& player,
-    std::vector<EngineLN::Mesh>& meshes,
-    bool isTextured
+    std::vector<EngineLN::Mesh>& meshes
 )
 {
     shader.use();
@@ -889,6 +943,9 @@ void MeshesBeginDrawing(const EngineLN::Shader& shader,
     // camera stuff
     shader.mat4Set("perspective", player.camera.perspective());
     shader.mat4Set("model", glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, 0.1f)));
+    shader.intSet("material.diffuse", 0);
+    shader.intSet("material.specular", 1);
+    shader.floatSet("material.shininess", 32.0f);
 
     for (auto& mesh : meshes) {
         // sending a mesh's vertex data and texture data (if textured) to the GPU
@@ -898,8 +955,7 @@ void MeshesBeginDrawing(const EngineLN::Shader& shader,
 
 void MeshesDraw(const EngineLN::Shader& shader,
     const EngineLN::Player& player,
-    std::vector<EngineLN::Mesh>& meshes,
-    bool isTextured
+    std::vector<EngineLN::Mesh>& meshes
 )
 {
     shader.use();
@@ -917,43 +973,32 @@ void MeshesDraw(const EngineLN::Shader& shader,
 // Draw functions for skybox
 void SkyboxBeginDrawing(const EngineLN::Shader& shader,
     const EngineLN::Player& player,
-    EngineLN::Skybox& skybox,
-    bool isTextured
+    EngineLN::Skybox& skybox
 )
 {
     shader.use();
-
     // camera stuff
     shader.mat4Set("perspective", player.camera.perspective());
 
-    skybox.sendToGPU(isTextured);
+    skybox.sendToGPU();
 
-    if (!isTextured)
-    {
-        shader.vec3Set("upperHemisphereColor", {0.45, 0.70, 0.90});
-        shader.vec3Set("lowerHemisphereColor", {0.65, 0.67, 0.68});
-    }
 }
 
 void SkyboxDraw(const EngineLN::Shader& shader,
     const EngineLN::Player& player,
-    EngineLN::Skybox& skybox,
-    bool isTextured
+    EngineLN::Skybox& skybox
 )
 {
-    glDepthFunc(GL_LEQUAL);
-
     shader.use();
+
+    glDepthFunc(GL_LEQUAL);
 
     // sending the view matrix to the GPU //
     shader.mat4Set("view", player.camera.view());
 
     glBindVertexArray(skybox.VertexArrayID);
 
-    if (isTextured)
-    {
-        glActiveTexture(GL_TEXTURE0);
-    }
+    glActiveTexture(GL_TEXTURE0);
 
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -999,8 +1044,13 @@ void SkyboxDraw(const EngineLN::Shader& shader,
 
 void keyInput(GLFWwindow* window, EngineLN::Player &player, float deltaTime)
 {
-    glm::vec3 forward = player.camera.getForward();
-    glm::vec3 right = player.camera.getRight();
+    glm::vec3 unscaledForward = player.camera.getForward();
+    glm::vec3 unscaledRight = player.camera.getRight();
+    glm::vec3 unscaledUp = player.camera.getUp();
+
+    glm::vec3 forward = unscaledForward * 10.0f;
+    glm::vec3 right = unscaledRight * 10.0f;
+    glm::vec3 up = unscaledUp * 10.0f;
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
         player.camera.position.x += deltaTime * forward.x;
@@ -1023,11 +1073,11 @@ void keyInput(GLFWwindow* window, EngineLN::Player &player, float deltaTime)
     }
 
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-        player.camera.position.y += deltaTime;
+        player.camera.position.y += deltaTime * up.y;
     }
 
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-        player.camera.position.y -= deltaTime;
+        player.camera.position.y -= deltaTime * up.y;
     }
 }
 
