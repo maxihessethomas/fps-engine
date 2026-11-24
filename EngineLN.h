@@ -78,13 +78,14 @@ namespace EngineLN {
     {
     public:
 
-        unsigned int VertexArrayID, DiffuseID{}, SpecularID{};
+        unsigned int VertexArrayID, DiffuseID{}, SpecularID{}, NormalID{};
 
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
 
         const char* diffuseFilePath;
         const char* specularFilePath;
+        const char* normalFilePath;
 
         // lighting stuff
         glm::vec3 ambient;
@@ -95,6 +96,7 @@ namespace EngineLN {
         void init(const char*);
         void init(const char*, const char*);
         void init(const char*, const char*, const char*);
+        void init(const char*, const char*, const char*, const char*);
         void sendToGPU();
         void draw();
 
@@ -106,6 +108,7 @@ namespace EngineLN {
 
         int DiffuseWidth, DiffuseHeight, DiffuseChannelCount;
         int SpecularWidth, SpecularHeight, SpecularChannelCount;
+        int NormalWidth, NormalHeight, NormalChannelCount;
     };
 
     class Skybox

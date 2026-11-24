@@ -1,7 +1,10 @@
 #include "glm/ext/matrix_transform.hpp"
 #include <_time.h>
 #include <chrono>
+#include <complex>
 #include <cstdint>
+#include <new>
+#include <random>
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "EngineLN.h"
@@ -67,6 +70,7 @@ bool EngineLN::App::init()
 
     meshes.push_back(SponzaAtrium);
 
+
 /*   collisionScene.addMesh(SponzaAtrium); */
 
     skybox.init();
@@ -95,9 +99,7 @@ void EngineLN::App::run()
         SkyboxDraw(skyboxShader, player, skybox);
 
         keyInput(window, player, deltaTime);
-
         network.update(player.position);
-
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -166,6 +168,23 @@ void EngineLN::Mesh::init(const char* objFilePath,
 
     this->diffuseFilePath = diffuseFilePath;
     this->specularFilePath = specularFilePath;
+}
+
+void EngineLN::Mesh::init(const char* objFilePath,
+    const char* diffuseFilePath,
+    const char* specularFilePath,
+    const char* normalFilePath
+)
+{
+    readOBJ(objFilePath, vertices, indices);
+
+    glGenTextures(1, &DiffuseID);
+    glGenTextures(1, &SpecularID);
+    glGenTextures(1, &NormalID);
+
+    this->diffuseFilePath = diffuseFilePath;
+    this->specularFilePath = specularFilePath;
+    this->normalFilePath = normalFilePath;
 }
 
 void EngineLN::Mesh::sendToGPU()
@@ -241,7 +260,33 @@ void EngineLN::Mesh::sendToGPU()
 
         if (data) {
             GLenum format = (SpecularChannelCount == 4) ? GL_RGBA : GL_RGB;
-            glTexImage2D(GL_TEXTURE_2D, 0, format, SpecularChannelCount, SpecularHeight, 0, format, GL_UNSIGNED_BYTE, data);
+            glTexImage2D(GL_TEXTURE_2D, 0, format, SpecularWidth, SpecularHeight, 0, format, GL_UNSIGNED_BYTE, data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+            stbi_image_free(data);
+        } else {
+            std::cout << "failed";
+        }
+
+        // unbinding OpenGL Texture
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    if (NormalID != 0)
+    {
+        // OpenGL Texture creation and binding
+        glBindTexture(GL_TEXTURE_2D, NormalID);
+
+        // Sending texture data to GPU via OpenGL Texture
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        unsigned char* data = stbi_load(normalFilePath, &NormalWidth, &NormalHeight, &NormalChannelCount, 0);
+
+        if (data) {
+            GLenum format = (NormalChannelCount == 4) ? GL_RGBA : GL_RGB;
+            glTexImage2D(GL_TEXTURE_2D, 0, format, NormalWidth, NormalHeight, 0, format, GL_UNSIGNED_BYTE, data);
             glGenerateMipmap(GL_TEXTURE_2D);
             stbi_image_free(data);
         } else {
@@ -275,9 +320,16 @@ void EngineLN::Mesh::draw() {
         glBindTexture(GL_TEXTURE_2D, SpecularID);
     }
 
+    if (NormalID != 0)
+    {
+        // bind OpenGL Texture (necessary for glDrawElements)
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, NormalID);
+    }
+
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 
-    if (DiffuseID != 0 || SpecularID != 0)
+    if (DiffuseID != 0 || SpecularID != 0 || NormalID != 0)
     {
         // unbind Opengl Texture
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -945,6 +997,7 @@ void MeshesBeginDrawing(const EngineLN::Shader& shader,
     shader.mat4Set("model", glm::scale(glm::mat4(1.0f), glm::vec3(0.1f, 0.1f, 0.1f)));
     shader.intSet("material.diffuse", 0);
     shader.intSet("material.specular", 1);
+    shader.intSet("material.normal", 2);
     shader.floatSet("material.shininess", 32.0f);
 
     for (auto& mesh : meshes) {
